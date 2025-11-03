@@ -10,7 +10,7 @@ const { playlistValidation, idValidation } = require('../middleware/validation')
 // Public routes
 router.get('/public', playlistController.getPublicPlaylists);
 router.get('/curated', playlistController.getCuratedPlaylists);
-router.get('/:id', optionalAuth, idValidation, playlistController.getPlaylist);
+router.get('/', optionalAuth, idValidation, playlistController.getPlaylist);
 
 // Protected routes
 router.post('/', protect, playlistValidation.create, playlistController.createPlaylist);
