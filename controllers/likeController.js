@@ -3,9 +3,7 @@
 const { Like, Song, Album, Playlist } = require('../models');
 const ApiResponse = require('../utils/apiResponse');
 
-// @desc    Toggle like on song
-// @route   POST /api/likes/song/:id
-// @access  Private
+
 const toggleLikeSong = async (req, res, next) => {
   try {
     const songId = req.params.id;
@@ -32,9 +30,7 @@ const toggleLikeSong = async (req, res, next) => {
   }
 };
 
-// @desc    Toggle like on album
-// @route   POST /api/likes/album/:id
-// @access  Private
+
 const toggleLikeAlbum = async (req, res, next) => {
   try {
     const albumId = req.params.id;
@@ -62,9 +58,7 @@ const toggleLikeAlbum = async (req, res, next) => {
   }
 };
 
-// @desc    Toggle like on playlist
-// @route   POST /api/likes/playlist/:id
-// @access  Private
+
 const toggleLikePlaylist = async (req, res, next) => {
   try {
     const playlistId = req.params.id;
@@ -142,9 +136,7 @@ const getLikedAlbums = async (req, res, next) => {
   }
 };
 
-// @desc    Get user's liked playlists
-// @route   GET /api/likes/playlists
-// @access  Private
+
 const getLikedPlaylists = async (req, res, next) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -167,9 +159,7 @@ const getLikedPlaylists = async (req, res, next) => {
   }
 };
 
-// @desc    Check if items are liked
-// @route   POST /api/likes/check
-// @access  Private
+
 const checkLikes = async (req, res, next) => {
   try {
     const { items } = req.body; // [{ type: 'song', id: '...' }, ...]

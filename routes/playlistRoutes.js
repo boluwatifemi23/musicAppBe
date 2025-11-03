@@ -14,7 +14,7 @@ router.get('/:id', optionalAuth, idValidation, playlistController.getPlaylist);
 
 // Protected routes
 router.post('/', protect, playlistValidation.create, playlistController.createPlaylist);
-router.get('/', protect, playlistController.getUserPlaylists);
+router.get('/:id', protect, playlistController.getUserPlaylists);
 router.put('/:id', protect, idValidation, playlistValidation.update, playlistController.updatePlaylist);
 router.put('/:id/cover', protect, idValidation, uploadSingleImage, playlistController.updatePlaylistCover);
 router.delete('/:id', protect, idValidation, playlistController.deletePlaylist);

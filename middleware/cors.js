@@ -5,7 +5,7 @@ const cors = require('cors');
 // Allowed origins (can be multiple)
 const allowedOrigins = process.env.CORS_ORIGIN 
   ? process.env.CORS_ORIGIN.split(',')
-  : ['http://localhost:5173'];
+  : ['http://localhost:5173', 'http://localhost:5174'];
 
 const corsOptions = {
   origin: function (origin, callback) {

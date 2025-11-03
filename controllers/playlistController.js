@@ -1,12 +1,9 @@
-// controllers/playlistController.js - Playlist Management Controller
+
 
 const { Playlist, Song, Like } = require('../models');
 const ApiResponse = require('../utils/apiResponse');
 const { uploadImage, deleteFile } = require('../utils/cloudinaryUpload');
 
-// @desc    Create playlist
-// @route   POST /api/playlists
-// @access  Private
 const createPlaylist = async (req, res, next) => {
   try {
     const { name, description, isPublic, isCollaborative } = req.body;
@@ -34,12 +31,11 @@ const createPlaylist = async (req, res, next) => {
   }
 };
 
-// @desc    Get user's playlists
-// @route   GET /api/playlists
-// @access  Private
+
 const getUserPlaylists = async (req, res, next) => {
+  const{id}= req.params.id
   try {
-    const playlists = await Playlist.findUserPlaylists(req.user._id);
+    const playlists = await Playlist.findUserPlaylists(id);
 
     return ApiResponse.success(
       res,
@@ -51,9 +47,7 @@ const getUserPlaylists = async (req, res, next) => {
   }
 };
 
-// @desc    Get single playlist
-// @route   GET /api/playlists/:id
-// @access  Public
+
 const getPlaylist = async (req, res, next) => {
   try {
     const playlist = await Playlist.findById(req.params.id)
@@ -94,9 +88,7 @@ const getPlaylist = async (req, res, next) => {
   }
 };
 
-// @desc    Update playlist
-// @route   PUT /api/playlists/:id
-// @access  Private
+
 const updatePlaylist = async (req, res, next) => {
   try {
     const playlist = await Playlist.findById(req.params.id);
@@ -206,9 +198,7 @@ const deletePlaylist = async (req, res, next) => {
   }
 };
 
-// @desc    Add song to playlist
-// @route   POST /api/playlists/:id/songs
-// @access  Private
+
 const addSongToPlaylist = async (req, res, next) => {
   try {
     const { songId } = req.body;
@@ -242,9 +232,6 @@ const addSongToPlaylist = async (req, res, next) => {
   }
 };
 
-// @desc    Remove song from playlist
-// @route   DELETE /api/playlists/:id/songs/:songId
-// @access  Private
 const removeSongFromPlaylist = async (req, res, next) => {
   try {
     const playlist = await Playlist.findById(req.params.id);
@@ -266,9 +253,6 @@ const removeSongFromPlaylist = async (req, res, next) => {
   }
 };
 
-// @desc    Reorder songs in playlist
-// @route   PUT /api/playlists/:id/reorder
-// @access  Private
 const reorderPlaylist = async (req, res, next) => {
   try {
     const { songOrder } = req.body; // Array of song IDs in new order
@@ -292,9 +276,7 @@ const reorderPlaylist = async (req, res, next) => {
   }
 };
 
-// @desc    Get public playlists
-// @route   GET /api/playlists/public
-// @access  Public
+
 const getPublicPlaylists = async (req, res, next) => {
   try {
     const limit = parseInt(req.query.limit) || 20;
@@ -306,9 +288,7 @@ const getPublicPlaylists = async (req, res, next) => {
   }
 };
 
-// @desc    Get system/curated playlists
-// @route   GET /api/playlists/curated
-// @access  Public
+
 const getCuratedPlaylists = async (req, res, next) => {
   try {
     const playlists = await Playlist.findSystemPlaylists();
@@ -319,9 +299,7 @@ const getCuratedPlaylists = async (req, res, next) => {
   }
 };
 
-// @desc    Add collaborator to playlist
-// @route   POST /api/playlists/:id/collaborators
-// @access  Private
+
 const addCollaborator = async (req, res, next) => {
   try {
     const { userId } = req.body;
@@ -348,9 +326,7 @@ const addCollaborator = async (req, res, next) => {
   }
 };
 
-// @desc    Remove collaborator from playlist
-// @route   DELETE /api/playlists/:id/collaborators/:userId
-// @access  Private
+
 const removeCollaborator = async (req, res, next) => {
   try {
     const playlist = await Playlist.findById(req.params.id);

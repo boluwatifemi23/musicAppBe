@@ -1,19 +1,17 @@
-// server.js - Main Entry Point
+
 require('dotenv').config();
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const morgan = require('morgan');
 const helmet = require('helmet');
 const compression = require('compression');
-// const mongoSanitize = require('express-mongo-sanitize');
 
-// Import configurations
 const connectDB = require('./config/db');
 const validateEnv = require('./utils/validateEnv');
 const corsMiddleware = require('./middleware/cors');
 const errorHandler = require('./middleware/errorHandler');
 
-// Import routes
+
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const artistRoutes = require('./routes/artistRoutes');
@@ -24,22 +22,23 @@ const searchRoutes = require('./routes/searchRoutes');
 const likeRoutes = require('./routes/likeRoutes');
 const followRoutes = require('./routes/followRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 
-// Validate environment variables first
+
 validateEnv();
 
-// Initialize Express app
+
 const app = express();
 
-// Connect to MongoDB
+
 connectDB();
 
-// Trust proxy (important for rate limiting behind reverse proxy)
+
 app.set('trust proxy', 1);
 
-// Security Middleware
+
 app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" }, // Allow Cloudinary resources
+  crossOriginResourcePolicy: { policy: "cross-origin" }, 
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
@@ -58,32 +57,24 @@ app.use(corsMiddleware);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Data sanitization against NoSQL injection
-// app.use(mongoSanitize());
 
-// Cookie parser
 app.use(cookieParser());
 
 
 
-// app.use(mongoSanitize({
-//   onSanitize: ({ key }) => {
-//     console.warn(`Sanitized key: ${key}`);
-//   },
-//   replaceWith: '_', // optional
-// }));
 
 
 
-// Compression middleware
+
+
 app.use(compression());
 
-// Logging middleware (only in development)
+
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
 
-// Health check route
+
 app.get('/health', (req, res) => {
   res.status(200).json({
     success: true,
@@ -104,6 +95,7 @@ app.use('/api/search', searchRoutes);
 app.use('/api/likes', likeRoutes);
 app.use('/api/follows', followRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/admin', adminRoutes);
 
 // 404 handler
 app.use((req, res) => {
@@ -114,7 +106,7 @@ app.use((req, res) => {
   });
 });
 
-// Global error handler (must be last)
+
 app.use(errorHandler);
 
 // Start server
@@ -129,7 +121,7 @@ const server = app.listen(PORT, () => {
   `);
 });
 
-// Handle unhandled promise rejections
+
 process.on('unhandledRejection', (err) => {
   console.error('❌ UNHANDLED REJECTION! Shutting down...');
   console.error(err.name, err.message);
@@ -138,14 +130,14 @@ process.on('unhandledRejection', (err) => {
   });
 });
 
-// Handle uncaught exceptions
+
 process.on('uncaughtException', (err) => {
   console.error('❌ UNCAUGHT EXCEPTION! Shutting down...');
   console.error(err.name, err.message);
   process.exit(1);
 });
 
-// Graceful shutdown
+
 process.on('SIGTERM', () => {
   console.log('👋 SIGTERM received. Shutting down gracefully...');
   server.close(() => {
@@ -153,4 +145,4 @@ process.on('SIGTERM', () => {
   });
 });
 
-module.exports = app; // For testing purposes
+module.exports = app; 

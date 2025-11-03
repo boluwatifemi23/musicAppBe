@@ -5,14 +5,10 @@ const { generateTokens, verifyRefreshToken } = require('../utils/generateToken')
 const { generateOTP, generateOTPExpiry, validateOTP } = require('../utils/generateOtp');
 const { sendOTPEmail, sendWelcomeEmail, sendPasswordResetEmail } = require('../utils/sendEmail');
 const ApiResponse = require('../utils/apiResponse');
-// const { OAuth2Client } = require('google-auth-library');
+
 const crypto = require('crypto');
 
-// const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-// @desc    Register new user
-// @route   POST /api/auth/signup
-// @access  Public
 const signup = async (req, res, next) => {
   try {
     const { name, email, password } = req.body;
@@ -25,7 +21,7 @@ const signup = async (req, res, next) => {
 
     // Generate OTP
     const otp = generateOTP(6);
-    const otpExpiry = generateOTPExpiry(10); // 10 minutes
+    const otpExpiry = generateOTPExpiry(10); 
 
     // Create user
     const user = await User.create({
@@ -56,9 +52,7 @@ const signup = async (req, res, next) => {
   }
 };
 
-// @desc    Verify email with OTP
-// @route   POST /api/auth/verify-email
-// @access  Public
+
 const verifyEmail = async (req, res, next) => {
   try {
     const { email, otp } = req.body;
@@ -107,7 +101,7 @@ const verifyEmail = async (req, res, next) => {
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
     });
 
-    // Set refresh token in httpOnly cookie
+    
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -174,9 +168,7 @@ const resendOTP = async (req, res, next) => {
   }
 };
 
-// @desc    Login user
-// @route   POST /api/auth/login
-// @access  Public
+
 const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;

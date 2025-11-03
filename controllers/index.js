@@ -10,6 +10,7 @@ const searchController = require('./searchController');
 const likeController = require('./likeController');
 const followController = require('./followController');
 const uploadController = require('./uploadController');
+const adminController = require('./adminController')
 
 module.exports = {
   authController,
@@ -21,5 +22,6 @@ module.exports = {
   searchController,
   likeController,
   followController,
-  uploadController
+  uploadController,
+  adminController
 };
