@@ -40,18 +40,14 @@ const uploadImage = async (filePath, folder = 'music-app/images') => {
   }
 };
 
-/**
- * Upload audio file to Cloudinary
- * @param {String} filePath - Local file path
- * @param {String} folder - Cloudinary folder name
- * @returns {Object} Cloudinary upload result
- */
+
 const uploadAudio = async (filePath, folder = 'music-app/audio') => {
   try {
     const result = await cloudinary.uploader.upload(filePath, {
-      folder: folder,
-      resource_type: 'video', // Audio files use 'video' resource type in Cloudinary
-      format: 'mp3' // Convert to MP3 for consistency
+      folder,
+      resource_type: 'video', // Audio must be treated as 'video' in Cloudinary
+      use_filename: true,     // Keep the original filename
+      unique_filename: false  // Optional: avoid random strings
     });
 
     // Delete local file after upload
@@ -60,16 +56,13 @@ const uploadAudio = async (filePath, folder = 'music-app/audio') => {
     return {
       url: result.secure_url,
       publicId: result.public_id,
-      duration: result.duration, // Duration in seconds
+      duration: result.duration || 0,
       format: result.format,
       bytes: result.bytes
     };
   } catch (error) {
-    // Delete local file even if upload fails
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-    }
-    throw new Error(`Audio upload failed: ${error.message}`);
+    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    throw new Error(`Audio upload failed: ${error.message || 'Unknown error'}`);
   }
 };
 

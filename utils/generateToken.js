@@ -11,7 +11,7 @@ const generateAccessToken = (userId) => {
   return jwt.sign(
     { userId }, // Payload
     process.env.JWT_SECRET, // Secret key
-    { expiresIn: process.env.JWT_EXPIRES_IN || '15m' } // Expires in 15 minutes
+    { expiresIn: process.env.JWT_EXPIRES_IN} 
   );
 };
 
@@ -24,7 +24,7 @@ const generateRefreshToken = (userId) => {
   return jwt.sign(
     { userId },
     process.env.JWT_REFRESH_SECRET, // Different secret for refresh tokens
-    { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' } // Expires in 7 days
+    { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN} 
   );
 };
 

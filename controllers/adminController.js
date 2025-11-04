@@ -104,7 +104,7 @@ const adminUploadAlbumBulk = async (req, res, next) => {
         coverImage: album.coverImage ? album.coverImage : undefined,
         genre: meta.genre || genre,
         lyrics: meta.lyrics || '',
-        language: meta.language || 'unknown',
+        language: meta.language || 'en',
         isExplicit: meta.isExplicit || false,
         featuring: meta.featuring ? meta.featuring : []
       });
@@ -134,15 +134,23 @@ const createArtistByAdmin = async (req, res, next) => {
     const { artistName, bio, genres, socialLinks, userId } = req.body;
     if (!artistName) return ApiResponse.error(res, 'artistName required', 400);
 
+    const parsedGenres =
+      Array.isArray(genres)
+        ? genres
+        : typeof genres === 'string' && genres.trim().startsWith('[')
+          ? JSON.parse(genres)
+          : genres
+            ? genres.split(',').map(g => g.trim())
+            : [];
+
     const artist = await Artist.create({
-      userId: userId ? mongoose.Types.ObjectId(userId) : undefined,
+      userId: userId ? new mongoose.Types.ObjectId(userId) : undefined, // ✅ fixed
       artistName,
       bio,
-      genres: genres ? JSON.parse(genres) : [],
+      genres: parsedGenres,
       socialLinks: socialLinks ? JSON.parse(socialLinks) : {}
     });
 
-    // optionally set user's role
     if (userId) {
       const user = await User.findById(userId);
       if (user) {
@@ -152,8 +160,11 @@ const createArtistByAdmin = async (req, res, next) => {
     }
 
     return ApiResponse.success(res, artist, 'Artist created by admin', 201);
-  } catch (err) { next(err); }
+  } catch (err) {
+    next(err);
+  }
 };
+
 
 const updateArtistByAdmin = async (req, res, next) => {
   try {
