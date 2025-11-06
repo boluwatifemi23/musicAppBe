@@ -9,6 +9,7 @@ const { uploadSingleImage, uploadSong, uploadAlbum } = require('../middleware/up
 const { idValidation, paginationValidation } = require('../middleware/validation');
 const { uploadLimiter } = require('../middleware/rateLimiter');
 
+
 // Public routes
 router.get('/featured', artistController.getFeaturedArtists);
 router.get('/popular', artistController.getPopularArtists);
@@ -17,7 +18,12 @@ router.get('/:id/songs', idValidation, paginationValidation, artistController.ge
 router.get('/:id/albums', idValidation, paginationValidation, artistController.getArtistAlbums);
 
 // Protected routes (Artist profile management)
-router.post('/', protect, artistController.createArtist);
+router.post(
+    '/',
+    protect,
+    uploadSingleImage, // <-- This parses form-data (so req.body is filled)
+    artistController.createArtist
+);
 router.put('/:id', protect, isArtist, idValidation, artistController.updateArtist);
 router.put('/:id/profile-picture', protect, isArtist, idValidation, uploadSingleImage, artistController.updateArtistProfilePicture);
 router.put('/:id/cover-image', protect, isArtist, idValidation, uploadSingleImage, artistController.updateArtistCoverImage);

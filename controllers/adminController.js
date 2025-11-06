@@ -1,356 +1,321 @@
 // controllers/adminController.js
+
 const { User, Artist, Song, Album } = require('../models');
 const ApiResponse = require('../utils/apiResponse');
 const { uploadAudio, uploadImage, uploadProfilePicture, deleteFile } = require('../utils/cloudinaryUpload');
 const mongoose = require('mongoose');
 
-
+// ============================================
+// Admin: Upload Song
+// ============================================
 const adminUploadSong = async (req, res, next) => {
   try {
-    const { title, artistId, albumId, genre, lyrics, language, isExplicit, featuring } = req.body;
+    const { title, artistId, genre, albumId } = req.body;
 
-    if (!title || !artistId || !req.files || !req.files.audio) {
-      return ApiResponse.error(res, 'title, artistId and audio file required', 400);
+    if (!title || !artistId) {
+      return ApiResponse.error(res, 'Title and artist are required', 400);
     }
 
-    // Optional: verify artist exists
     const artist = await Artist.findById(artistId);
     if (!artist) return ApiResponse.notFound(res, 'Artist not found');
 
-    // Upload audio and cover if present
-    const audioResult = await uploadAudio(req.files.audio[0].path);
-    let coverResult = null;
-    if (req.files.cover) {
-      coverResult = await uploadImage(req.files.cover[0].path);
-    }
+    const songFile = req.files?.songFile?.[0];
+    const coverImage = req.files?.coverImage?.[0];
+
+    const audioUpload = songFile ? await uploadAudio(songFile.path) : null;
+    const imageUpload = coverImage ? await uploadImage(coverImage.path) : null;
 
     const song = await Song.create({
       title,
-      artistId: artist._id,
-      albumId: albumId || undefined,
-      audioFile: {
-        url: audioResult.url,
-        publicId: audioResult.publicId,
-        duration: audioResult.duration,
-        format: audioResult.format,
-        size: audioResult.bytes
-      },
-      coverImage: coverResult ? { url: coverResult.url, publicId: coverResult.publicId } : undefined,
+      artist: artistId,
       genre,
-      lyrics,
-      language,
-      isExplicit: isExplicit === 'true' || isExplicit === true,
-      featuring: featuring ? JSON.parse(featuring) : []
+      album: albumId || null,
+      audioUrl: audioUpload?.secure_url,
+      coverImage: imageUpload?.secure_url,
+      uploadedByAdmin: true,
     });
 
-    // update artist stats
-    artist.stats = artist.stats || { totalSongs: 0, totalAlbums: 0, totalFollowers: 0 };
-    artist.stats.totalSongs = (artist.stats.totalSongs || 0) + 1;
-    await artist.save();
-
-    return ApiResponse.success(res, song, 'Song uploaded by admin', 201);
+    return ApiResponse.success(res, song, 'Song uploaded successfully');
   } catch (err) {
     next(err);
   }
 };
 
-// Bulk album upload (album metadata + many songs files)
+// ============================================
+// Admin: Bulk Upload Albums
+// ============================================
 const adminUploadAlbumBulk = async (req, res, next) => {
   try {
-    // expected fields: title, artistId, genre, releaseDate, recordLabel, tracksMetadata (JSON array of {title, featuring, lyrics,...})
-    // files: cover (single), songs (multiple audio files in same order as tracksMetadata)
-    const { title, artistId, genre, releaseDate, recordLabel, tracksMetadata } = req.body;
-    if (!title || !artistId || !req.files || !req.files.songs) {
-      return ApiResponse.error(res, 'title, artistId and song files required', 400);
+    const { albums } = req.body;
+    if (!Array.isArray(albums) || albums.length === 0) {
+      return ApiResponse.error(res, 'Albums array required', 400);
     }
 
-    const tracksMeta = tracksMetadata ? JSON.parse(tracksMetadata) : [];
-    const songFiles = req.files.songs;
-
-    // create album cover
-    let coverResult = null;
-    if (req.files.cover && req.files.cover[0]) {
-      coverResult = await uploadImage(req.files.cover[0].path, 'music-app/albums');
-    }
-
-    // Create album doc first
-    const album = await Album.create({
-      title,
-      artistId,
-      genre,
-      releaseDate: releaseDate || Date.now(),
-      recordLabel,
-      coverImage: coverResult ? { url: coverResult.url, publicId: coverResult.publicId } : undefined,
-      tracks: []
-    });
-
-    // For each song file, upload and create Song, then add to album.tracks
-    for (let i = 0; i < songFiles.length; i++) {
-      const file = songFiles[i];
-      const meta = tracksMeta[i] || {};
-      const audioResult = await uploadAudio(file.path);
-
-      const songDoc = await Song.create({
-        title: meta.title || `Track ${i + 1}`,
-        artistId,
-        albumId: album._id,
-        audioFile: {
-          url: audioResult.url,
-          publicId: audioResult.publicId,
-          duration: audioResult.duration,
-          format: audioResult.format,
-          size: audioResult.bytes
-        },
-        coverImage: album.coverImage ? album.coverImage : undefined,
-        genre: meta.genre || genre,
-        lyrics: meta.lyrics || '',
-        language: meta.language || 'en',
-        isExplicit: meta.isExplicit || false,
-        featuring: meta.featuring ? meta.featuring : []
-      });
-
-      album.tracks.push({ songId: songDoc._id, position: i + 1 });
-    }
-
-    await album.save();
-
-    // update artist stats
-    const artist = await Artist.findById(artistId);
-    if (artist) {
-      artist.stats.totalAlbums = (artist.stats.totalAlbums || 0) + 1;
-      artist.stats.totalSongs = (artist.stats.totalSongs || 0) + songFiles.length;
-      await artist.save();
-    }
-
-    return ApiResponse.success(res, album, 'Album and tracks uploaded by admin', 201);
+    const newAlbums = await Album.insertMany(albums);
+    return ApiResponse.success(res, newAlbums, `${newAlbums.length} albums added`);
   } catch (err) {
     next(err);
   }
 };
 
-// Manage artists (CRUD)
+// ============================================
+// Artist Management
+// ============================================
 const createArtistByAdmin = async (req, res, next) => {
   try {
-    const { artistName, bio, genres, socialLinks, userId } = req.body;
-    if (!artistName) return ApiResponse.error(res, 'artistName required', 400);
+    const { userId, artistName, bio, genres } = req.body;
 
-    const parsedGenres =
-      Array.isArray(genres)
-        ? genres
-        : typeof genres === 'string' && genres.trim().startsWith('[')
-          ? JSON.parse(genres)
-          : genres
-            ? genres.split(',').map(g => g.trim())
-            : [];
+    const user = await User.findById(userId);
+    if (!user) return ApiResponse.notFound(res, 'User not found');
 
-    const artist = await Artist.create({
-      userId: userId ? new mongoose.Types.ObjectId(userId) : undefined, // ✅ fixed
-      artistName,
-      bio,
-      genres: parsedGenres,
-      socialLinks: socialLinks ? JSON.parse(socialLinks) : {}
-    });
+    const existingArtist = await Artist.findOne({ userId });
+    if (existingArtist) return ApiResponse.error(res, 'User is already an artist', 400);
 
-    if (userId) {
-      const user = await User.findById(userId);
-      if (user) {
-        user.role = 'artist';
-        await user.save();
-      }
+    let profilePictureUrl = null;
+    if (req.file) {
+      const uploadResult = await uploadProfilePicture(req.file.path);
+      profilePictureUrl = uploadResult.secure_url;
     }
 
-    return ApiResponse.success(res, artist, 'Artist created by admin', 201);
+    const artist = await Artist.create({
+      userId,
+      artistName,
+      bio,
+      genres,
+      profilePicture: profilePictureUrl,
+      approvedByAdmin: true,
+      verified: true,
+    });
+
+    return ApiResponse.success(res, artist, 'Artist profile created by admin');
   } catch (err) {
     next(err);
   }
 };
-
 
 const updateArtistByAdmin = async (req, res, next) => {
   try {
-    const artist = await Artist.findById(req.params.id);
+    const { id } = req.params;
+    const updateData = req.body;
+
+    const artist = await Artist.findByIdAndUpdate(id, updateData, { new: true });
     if (!artist) return ApiResponse.notFound(res, 'Artist not found');
 
-    const { artistName, bio, genres, socialLinks, isActive } = req.body;
-    if (artistName) artist.artistName = artistName;
-    if (bio !== undefined) artist.bio = bio;
-    if (genres) artist.genres = JSON.parse(genres);
-    if (socialLinks) artist.socialLinks = JSON.parse(socialLinks);
-    if (isActive !== undefined) artist.isActive = isActive;
-
-    await artist.save();
-    return ApiResponse.success(res, artist, 'Artist updated');
-  } catch (err) { next(err); }
+    return ApiResponse.success(res, artist, 'Artist updated successfully');
+  } catch (err) {
+    next(err);
+  }
 };
 
 const deleteArtistByAdmin = async (req, res, next) => {
   try {
-    const artist = await Artist.findById(req.params.id);
+    const { id } = req.params;
+
+    const artist = await Artist.findByIdAndDelete(id);
     if (!artist) return ApiResponse.notFound(res, 'Artist not found');
 
-    // optionally remove their songs/albums or mark inactive — here we delete
-    // delete album covers and audio files
-    const albums = await Album.find({ artistId: artist._id });
-    for (const album of albums) {
-      if (album.coverImage && album.coverImage.publicId) {
-        await deleteFile(album.coverImage.publicId, 'image');
-      }
-      // delete tracks' audio if stored on Cloudinary
-      for (const t of album.tracks) {
-        const s = await Song.findById(t.songId);
-        if (s && s.audioFile && s.audioFile.publicId) {
-          await deleteFile(s.audioFile.publicId, 'video');
-        }
-        if (s) await s.deleteOne();
-      }
-      await album.deleteOne();
-    }
-
-    // delete standalone songs
-    const songs = await Song.find({ artistId: artist._id });
-    for (const s of songs) {
-      if (s.audioFile && s.audioFile.publicId) await deleteFile(s.audioFile.publicId, 'video');
-      await s.deleteOne();
-    }
-
-    await artist.deleteOne();
-
-    return ApiResponse.success(res, null, 'Artist and related content deleted');
-  } catch (err) { next(err); }
+    return ApiResponse.success(res, artist, 'Artist deleted successfully');
+  } catch (err) {
+    next(err);
+  }
 };
 
-// Manage songs (admin CRUD)
+// ============================================
+// Featured Artists Management
+// ============================================
+const toggleFeaturedArtist = async (req, res, next) => {
+  try {
+    const artist = await Artist.findById(req.params.id);
+    if (!artist) {
+      return ApiResponse.notFound(res, 'Artist not found');
+    }
+
+    artist.isFeatured = !artist.isFeatured;
+    artist.featuredAt = artist.isFeatured ? Date.now() : undefined;
+
+    await artist.save();
+
+    return ApiResponse.success(
+      res,
+      {
+        _id: artist._id,
+        artistName: artist.artistName,
+        isFeatured: artist.isFeatured,
+        featuredAt: artist.featuredAt
+      },
+      artist.isFeatured ? 'Artist featured successfully' : 'Artist unfeatured successfully'
+    );
+  } catch (err) {
+    next(err);
+  }
+};
+
+const bulkSetFeaturedArtists = async (req, res, next) => {
+  try {
+    const { artistIds, replaceAll } = req.body;
+
+    if (!Array.isArray(artistIds) || artistIds.length === 0) {
+      return ApiResponse.error(res, 'artistIds array is required', 400);
+    }
+
+    if (replaceAll === true) {
+      await Artist.updateMany({}, { isFeatured: false, featuredAt: undefined });
+    }
+
+    const result = await Artist.updateMany(
+      { _id: { $in: artistIds } },
+      { isFeatured: true, featuredAt: Date.now() }
+    );
+
+    const updatedArtists = await Artist.find({ _id: { $in: artistIds } })
+      .select('artistName profilePicture isFeatured featuredAt');
+
+    return ApiResponse.success(
+      res,
+      { modifiedCount: result.modifiedCount, artists: updatedArtists },
+      `${result.modifiedCount} artists set as featured`
+    );
+  } catch (err) {
+    next(err);
+  }
+};
+
+const getFeaturedArtistsAdmin = async (req, res, next) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+
+    const artists = await Artist.find({ isFeatured: true })
+      .sort({ featuredAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .populate('userId', 'name email');
+
+    const total = await Artist.countDocuments({ isFeatured: true });
+
+    return ApiResponse.paginated(res, artists, page, limit, total, 'Featured artists retrieved');
+  } catch (err) {
+    next(err);
+  }
+};
+
+const reorderFeaturedArtists = async (req, res, next) => {
+  try {
+    const { orderedArtistIds } = req.body;
+
+    if (!Array.isArray(orderedArtistIds)) {
+      return ApiResponse.error(res, 'orderedArtistIds array is required', 400);
+    }
+
+    const baseTime = Date.now();
+    const updates = orderedArtistIds.map((artistId, index) => {
+      const timestamp = baseTime + (orderedArtistIds.length - index) * 1000;
+      return Artist.findByIdAndUpdate(
+        artistId,
+        { isFeatured: true, featuredAt: new Date(timestamp) },
+        { new: true }
+      );
+    });
+
+    const updatedArtists = await Promise.all(updates);
+
+    return ApiResponse.success(
+      res,
+      {
+        count: updatedArtists.filter(a => a).length,
+        artists: updatedArtists.filter(a => a).map(a => ({
+          _id: a._id,
+          artistName: a.artistName,
+          featuredAt: a.featuredAt
+        }))
+      },
+      'Featured artists reordered successfully'
+    );
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ============================================
+// Songs & Albums (Admin Management)
+// ============================================
 const adminGetSong = async (req, res, next) => {
   try {
-    const song = await Song.findById(req.params.id).populate('artistId albumId');
+    const song = await Song.findById(req.params.id);
     if (!song) return ApiResponse.notFound(res, 'Song not found');
-    return ApiResponse.success(res, song, 'Song retrieved');
-  } catch (err) { next(err); }
+    return ApiResponse.success(res, song);
+  } catch (err) {
+    next(err);
+  }
 };
 
 const adminUpdateSong = async (req, res, next) => {
   try {
-    const song = await Song.findById(req.params.id);
+    const song = await Song.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!song) return ApiResponse.notFound(res, 'Song not found');
-
-    const { title, genre, lyrics, isPublished } = req.body;
-    if (title) song.title = title;
-    if (genre) song.genre = genre;
-    if (lyrics !== undefined) song.lyrics = lyrics;
-    if (isPublished !== undefined) song.isPublished = isPublished;
-
-    // replace audio or cover if files provided
-    if (req.files && req.files.audio) {
-      if (song.audioFile && song.audioFile.publicId) await deleteFile(song.audioFile.publicId, 'video');
-      const audioResult = await uploadAudio(req.files.audio[0].path);
-      song.audioFile = {
-        url: audioResult.url, publicId: audioResult.publicId, duration: audioResult.duration, format: audioResult.format, size: audioResult.bytes
-      };
-    }
-    if (req.files && req.files.cover) {
-      if (song.coverImage && song.coverImage.publicId) await deleteFile(song.coverImage.publicId, 'image');
-      const cover = await uploadImage(req.files.cover[0].path);
-      song.coverImage = { url: cover.url, publicId: cover.publicId };
-    }
-
-    await song.save();
-    return ApiResponse.success(res, song, 'Song updated by admin');
-  } catch (err) { next(err); }
+    return ApiResponse.success(res, song, 'Song updated successfully');
+  } catch (err) {
+    next(err);
+  }
 };
 
 const adminDeleteSong = async (req, res, next) => {
   try {
-    const song = await Song.findById(req.params.id);
+    const song = await Song.findByIdAndDelete(req.params.id);
     if (!song) return ApiResponse.notFound(res, 'Song not found');
-
-    // delete files from cloud
-    if (song.audioFile && song.audioFile.publicId) await deleteFile(song.audioFile.publicId, 'video');
-    if (song.coverImage && song.coverImage.publicId) await deleteFile(song.coverImage.publicId, 'image');
-
-    await song.deleteOne();
-    return ApiResponse.success(res, null, 'Song deleted by admin');
-  } catch (err) { next(err); }
+    return ApiResponse.success(res, song, 'Song deleted successfully');
+  } catch (err) {
+    next(err);
+  }
 };
 
-// Manage albums (admin CRUD)
 const adminGetAlbum = async (req, res, next) => {
   try {
-    const album = await Album.findById(req.params.id).populate('artistId tracks.songId');
+    const album = await Album.findById(req.params.id);
     if (!album) return ApiResponse.notFound(res, 'Album not found');
-    return ApiResponse.success(res, album, 'Album retrieved');
-  } catch (err) { next(err); }
+    return ApiResponse.success(res, album);
+  } catch (err) {
+    next(err);
+  }
 };
 
 const adminUpdateAlbum = async (req, res, next) => {
   try {
-    const album = await Album.findById(req.params.id);
+    const album = await Album.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!album) return ApiResponse.notFound(res, 'Album not found');
-
-    const { title, genre, releaseDate, recordLabel, isPublished } = req.body;
-    if (title) album.title = title;
-    if (genre) album.genre = genre;
-    if (releaseDate) album.releaseDate = releaseDate;
-    if (recordLabel) album.recordLabel = recordLabel;
-    if (isPublished !== undefined) album.isPublished = isPublished;
-
-    if (req.files && req.files.cover) {
-      if (album.coverImage && album.coverImage.publicId) await deleteFile(album.coverImage.publicId, 'image');
-      const cover = await uploadImage(req.files.cover[0].path);
-      album.coverImage = { url: cover.url, publicId: cover.publicId };
-    }
-
-    await album.save();
-    return ApiResponse.success(res, album, 'Album updated by admin');
-  } catch (err) { next(err); }
+    return ApiResponse.success(res, album, 'Album updated successfully');
+  } catch (err) {
+    next(err);
+  }
 };
 
 const adminDeleteAlbum = async (req, res, next) => {
   try {
-    const album = await Album.findById(req.params.id);
+    const album = await Album.findByIdAndDelete(req.params.id);
     if (!album) return ApiResponse.notFound(res, 'Album not found');
-
-    // delete cover and each track files
-    if (album.coverImage && album.coverImage.publicId) await deleteFile(album.coverImage.publicId, 'image');
-
-    for (const t of album.tracks) {
-      const s = await Song.findById(t.songId);
-      if (s) {
-        if (s.audioFile && s.audioFile.publicId) await deleteFile(s.audioFile.publicId, 'video');
-        if (s.coverImage && s.coverImage.publicId) await deleteFile(s.coverImage.publicId, 'image');
-        await s.deleteOne();
-      }
-    }
-
-    await album.deleteOne();
-
-    // update artist stats
-    const artist = await Artist.findById(album.artistId);
-    if (artist) {
-      artist.stats.totalAlbums = Math.max(0, (artist.stats.totalAlbums || 1) - 1);
-      await artist.save();
-    }
-
-    return ApiResponse.success(res, null, 'Album deleted by admin');
-  } catch (err) { next(err); }
+    return ApiResponse.success(res, album, 'Album deleted successfully');
+  } catch (err) {
+    next(err);
+  }
 };
 
-// View all content (Admin dashboard view)
+// ============================================
+// Admin: View All Content
+// ============================================
 const viewAllContent = async (req, res, next) => {
   try {
-    // pagination and filters optional
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 50;
-    const [songs, albums, artists, users] = await Promise.all([
-      Song.find().skip((page - 1) * limit).limit(limit).populate('artistId albumId'),
-      Album.find().skip((page - 1) * limit).limit(limit).populate('artistId'),
-      Artist.find().skip((page - 1) * limit).limit(limit),
-      User.find().skip((page - 1) * limit).limit(limit).select('-password')
-    ]);
-
-    return ApiResponse.success(res, { songs, albums, artists, users }, 'All content retrieved');
-  } catch (err) { next(err); }
+    const songs = await Song.find().populate('artist', 'artistName');
+    const albums = await Album.find().populate('artist', 'artistName');
+    const artists = await Artist.find();
+    return ApiResponse.success(res, { songs, albums, artists });
+  } catch (err) {
+    next(err);
+  }
 };
 
+// ============================================
+// Exports
+// ============================================
 module.exports = {
   adminUploadSong,
   adminUploadAlbumBulk,
@@ -363,5 +328,11 @@ module.exports = {
   adminGetAlbum,
   adminUpdateAlbum,
   adminDeleteAlbum,
-  viewAllContent
+  viewAllContent,
+
+  // Featured Artists
+  toggleFeaturedArtist,
+  bulkSetFeaturedArtists,
+  getFeaturedArtistsAdmin,
+  reorderFeaturedArtists
 };
