@@ -1,13 +1,11 @@
-// controllers/adminController.js
+
 
 const { User, Artist, Song, Album } = require('../models');
 const ApiResponse = require('../utils/apiResponse');
 const { uploadAudio, uploadImage, uploadProfilePicture, deleteFile } = require('../utils/cloudinaryUpload');
 const mongoose = require('mongoose');
 
-// ============================================
-// Admin: Upload Song
-// ============================================
+
 const adminUploadSong = async (req, res, next) => {
   try {
     const { title, artistId, genre, albumId } = req.body;
@@ -41,9 +39,7 @@ const adminUploadSong = async (req, res, next) => {
   }
 };
 
-// ============================================
-// Admin: Bulk Upload Albums
-// ============================================
+
 const adminUploadAlbumBulk = async (req, res, next) => {
   try {
     const { albums } = req.body;
@@ -58,9 +54,7 @@ const adminUploadAlbumBulk = async (req, res, next) => {
   }
 };
 
-// ============================================
-// Artist Management
-// ============================================
+
 const createArtistByAdmin = async (req, res, next) => {
   try {
     const { userId, artistName, bio, genres } = req.body;
@@ -120,9 +114,7 @@ const deleteArtistByAdmin = async (req, res, next) => {
   }
 };
 
-// ============================================
-// Featured Artists Management
-// ============================================
+
 const toggleFeaturedArtist = async (req, res, next) => {
   try {
     const artist = await Artist.findById(req.params.id);
@@ -299,9 +291,7 @@ const adminDeleteAlbum = async (req, res, next) => {
   }
 };
 
-// ============================================
-// Admin: View All Content
-// ============================================
+
 const viewAllContent = async (req, res, next) => {
   try {
     const songs = await Song.find().populate('artist', 'artistName');
@@ -313,9 +303,7 @@ const viewAllContent = async (req, res, next) => {
   }
 };
 
-// ============================================
-// Exports
-// ============================================
+
 module.exports = {
   adminUploadSong,
   adminUploadAlbumBulk,
@@ -329,8 +317,6 @@ module.exports = {
   adminUpdateAlbum,
   adminDeleteAlbum,
   viewAllContent,
-
-  // Featured Artists
   toggleFeaturedArtist,
   bulkSetFeaturedArtists,
   getFeaturedArtistsAdmin,
