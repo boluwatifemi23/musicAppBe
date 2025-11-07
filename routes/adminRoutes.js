@@ -31,7 +31,8 @@ router.delete('/artists/:id', idValidation, adminController.deleteArtistByAdmin)
 
 
 router.post('/songs', uploadLimiter, uploadSong, adminController.adminUploadSong);
-
+router.post('/songs/url', adminController.addSongWithUrl);
+router.post('/songs/bulk-url', adminController.bulkAddSongsWithUrl);
 
 router.get('/songs/:id', idValidation, adminController.adminGetSong);
 

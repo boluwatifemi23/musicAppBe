@@ -39,6 +39,104 @@ const adminUploadSong = async (req, res, next) => {
   }
 };
 
+const addSongWithUrl = async (req, res, next) => {
+  try {
+    const {
+      title,
+      artistId,
+      audioUrl,
+      coverUrl,
+      genre,
+      lyrics,
+      language,
+      duration,
+      isExplicit
+    } = req.body;
+
+    if (!title || !artistId || !audioUrl) {
+      return ApiResponse.error(res, 'title, artistId and audioUrl required', 400);
+    }
+
+    const artist = await Artist.findById(artistId);
+    if (!artist) return ApiResponse.notFound(res, 'Artist not found');
+
+    const song = await Song.create({
+      title,
+      artistId,
+      audioFile: {
+        url: audioUrl,
+        publicId: 'external-' + Date.now(),
+        duration: duration || 180, // Default 3 minutes
+        format: 'mp3',
+        size: 0
+      },
+      coverImage: coverUrl ? {
+        url: coverUrl,
+        publicId: 'external-cover-' + Date.now()
+      } : undefined,
+      genre: genre || 'Pop',
+      lyrics: lyrics || '',
+      language: language || 'English',
+      isExplicit: isExplicit || false
+    });
+
+    artist.stats.totalSongs = (artist.stats.totalSongs || 0) + 1;
+    await artist.save();
+
+    return ApiResponse.success(res, song, 'Song added successfully', 201);
+  } catch (err) {
+    next(err);
+  }
+};
+
+const bulkAddSongsWithUrl = async (req, res, next) => {
+  try {
+    const { songs, artistId } = req.body;
+
+    if (!Array.isArray(songs) || songs.length === 0) {
+      return ApiResponse.error(res, 'songs array is required', 400);
+    }
+
+    const artist = await Artist.findById(artistId);
+    if (!artist) return ApiResponse.notFound(res, 'Artist not found');
+
+    const createdSongs = [];
+
+    for (const songData of songs) {
+      const song = await Song.create({
+        title: songData.title,
+        artistId,
+        audioFile: {
+          url: songData.audioUrl,
+          publicId: 'external-' + Date.now() + Math.random(),
+          duration: songData.duration || 180,
+          format: 'mp3',
+          size: 0
+        },
+        coverImage: songData.coverUrl ? {
+          url: songData.coverUrl,
+          publicId: 'external-cover-' + Date.now() + Math.random()
+        } : undefined,
+        genre: songData.genre || 'Pop',
+        language: songData.language || 'English',
+        isExplicit: songData.isExplicit || false
+      });
+
+      createdSongs.push(song);
+    }
+
+    artist.stats = artist.stats || { totalSongs: 0 };
+    artist.stats.totalSongs = (artist.stats.totalSongs || 0) + createdSongs.length;
+    await artist.save();
+
+    return ApiResponse.success(res, createdSongs, `${createdSongs.length} songs added successfully`, 201);
+  } catch (err) {
+    next(err);
+  }
+};
+
+
+
 
 const adminUploadAlbumBulk = async (req, res, next) => {
   try {
@@ -228,9 +326,7 @@ const reorderFeaturedArtists = async (req, res, next) => {
   }
 };
 
-// ============================================
-// Songs & Albums (Admin Management)
-// ============================================
+
 const adminGetSong = async (req, res, next) => {
   try {
     const song = await Song.findById(req.params.id);
@@ -306,6 +402,8 @@ const viewAllContent = async (req, res, next) => {
 
 module.exports = {
   adminUploadSong,
+  addSongWithUrl,
+  bulkAddSongsWithUrl,
   adminUploadAlbumBulk,
   createArtistByAdmin,
   updateArtistByAdmin,
