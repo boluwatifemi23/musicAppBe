@@ -1,7 +1,7 @@
 const Music = require("../models/Music");
 const asyncHandler = require("express-async-handler");
 
-// Like or Unlike a song
+
 exports.toggleLike = asyncHandler(async (req, res) => {
   const song = await Music.findById(req.params.id);
   if (!song) return res.status(404).json({ message: "Song not found" });
@@ -23,7 +23,7 @@ exports.toggleLike = asyncHandler(async (req, res) => {
   });
 });
 
-// Add or Remove from favorites
+
 exports.toggleFavorite = asyncHandler(async (req, res) => {
   const song = await Music.findById(req.params.id);
   if (!song) return res.status(404).json({ message: "Song not found" });
@@ -45,7 +45,6 @@ exports.toggleFavorite = asyncHandler(async (req, res) => {
   });
 });
 
-// Increment stream count when user listens
 exports.incrementStream = asyncHandler(async (req, res) => {
   const song = await Music.findById(req.params.id);
   if (!song) return res.status(404).json({ message: "Song not found" });

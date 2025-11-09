@@ -1,30 +1,24 @@
-// middleware/rateLimiter.js - Rate Limiting
+
 
 const rateLimit = require('express-rate-limit');
 
-/**
- * General API rate limiter
- * 100 requests per 15 minutes
- */
+
 const generalLimiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, 
   max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
   message: {
     success: false,
     message: 'Too many requests, please try again later.'
   },
-  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
-  // Skip rate limiting in development (optional)
+  standardHeaders: true, 
+  legacyHeaders: false, 
+ 
   skip: (req) => process.env.NODE_ENV === 'development' && req.ip === '::1'
 });
 
-/**
- * Strict limiter for authentication routes
- * 5 requests per 15 minutes
- */
+
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 15 * 60 * 1000, 
   max: parseInt(process.env.RATE_LIMIT_AUTH_MAX) || 5,
   message: {
     success: false,
@@ -32,15 +26,12 @@ const authLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  skipSuccessfulRequests: true // Don't count successful requests
+  skipSuccessfulRequests: true 
 });
 
-/**
- * Limiter for file uploads
- * 10 uploads per hour
- */
+
 const uploadLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
+  windowMs: 60 * 60 * 1000, 
   max: 10,
   message: {
     success: false,
@@ -50,12 +41,9 @@ const uploadLimiter = rateLimit({
   legacyHeaders: false
 });
 
-/**
- * Limiter for search requests
- * 30 requests per minute
- */
+
 const searchLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
+  windowMs: 60 * 1000, 
   max: 30,
   message: {
     success: false,
@@ -65,12 +53,9 @@ const searchLimiter = rateLimit({
   legacyHeaders: false
 });
 
-/**
- * Limiter for password reset
- * 3 requests per hour
- */
+
 const passwordResetLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
+  windowMs: 60 * 60 * 1000, 
   max: 3,
   message: {
     success: false,

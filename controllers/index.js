@@ -1,4 +1,4 @@
-// controllers/index.js - Export all controllers
+
 
 const authController = require('./authController');
 const userController = require('./userController');

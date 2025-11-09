@@ -1,5 +1,3 @@
-// middleware/index.js - Export all middleware
-
 const { protect, optionalAuth } = require('./authMiddleware');
 const { authorize, isArtist, isAdmin, isOwnerOrAdmin } = require('./roleMiddleware');
 const errorHandler = require('./errorHandler');
@@ -35,27 +33,19 @@ const {
 const corsMiddleware = require('./cors');
 
 module.exports = {
-  // Auth
   protect,
   optionalAuth,
-  
-  // Roles
   authorize,
   isArtist,
   isAdmin,
   isOwnerOrAdmin,
-  
-  // Error handling
   errorHandler,
-  
-  // Rate limiting
   generalLimiter,
   authLimiter,
   uploadLimiter,
   searchLimiter,
   passwordResetLimiter,
   
-  // Validation
   validate,
   authValidation,
   userValidation,
@@ -66,7 +56,7 @@ module.exports = {
   idValidation,
   paginationValidation,
   
-  // File uploads
+  
   upload,
   uploadSingleImage,
   uploadMultipleImages,
@@ -77,6 +67,6 @@ module.exports = {
   uploadAlbum,
   handleMulterError,
   
-  // CORS
+  
   corsMiddleware
 };

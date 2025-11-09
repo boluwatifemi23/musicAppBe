@@ -1,12 +1,8 @@
-// controllers/userController.js - User Management Controller
-
 const { User, PlayHistory, Follow } = require('../models');
 const ApiResponse = require('../utils/apiResponse');
 const { uploadProfilePicture, deleteFile } = require('../utils/cloudinaryUpload');
 
-// @desc    Get user profile
-// @route   GET /api/users/profile/:id
-// @access  Public
+
 const getUserProfile = async (req, res, next) => {
   try {
     const user = await User.findById(req.params.id);
@@ -15,7 +11,6 @@ const getUserProfile = async (req, res, next) => {
       return ApiResponse.notFound(res, 'User not found');
     }
 
-    // Check if current user is viewing their own profile
     const isOwnProfile = req.user && req.user._id.toString() === user._id.toString();
 
     const profileData = {
@@ -28,7 +23,6 @@ const getUserProfile = async (req, res, next) => {
       createdAt: user.createdAt
     };
 
-    // Include email only for own profile
     if (isOwnProfile) {
       profileData.email = user.email;
       profileData.preferences = user.preferences;
@@ -40,9 +34,6 @@ const getUserProfile = async (req, res, next) => {
   }
 };
 
-// @desc    Update user profile
-// @route   PUT /api/users/profile
-// @access  Private
 const updateProfile = async (req, res, next) => {
   try {
     const { name, bio } = req.body;
@@ -69,9 +60,7 @@ const updateProfile = async (req, res, next) => {
   }
 };
 
-// @desc    Update profile picture
-// @route   PUT /api/users/profile-picture
-// @access  Private
+
 const updateProfilePicture = async (req, res, next) => {
   try {
     if (!req.file) {
@@ -80,12 +69,10 @@ const updateProfilePicture = async (req, res, next) => {
 
     const user = await User.findById(req.user._id);
 
-    // Delete old profile picture from Cloudinary
     if (user.profilePicture.publicId) {
       await deleteFile(user.profilePicture.publicId, 'image');
     }
 
-    // Upload new profile picture
     const result = await uploadProfilePicture(req.file.path);
 
     user.profilePicture = {
@@ -105,9 +92,7 @@ const updateProfilePicture = async (req, res, next) => {
   }
 };
 
-// @desc    Update user preferences
-// @route   PUT /api/users/preferences
-// @access  Private
+
 const updatePreferences = async (req, res, next) => {
   try {
     const { language, theme, emailNotifications, playbackQuality } = req.body;
@@ -131,20 +116,15 @@ const updatePreferences = async (req, res, next) => {
   }
 };
 
-// @desc    Get user statistics
-// @route   GET /api/users/stats
-// @access  Private
+
 const getUserStats = async (req, res, next) => {
   try {
     const userId = req.user._id;
 
-    // Get listening stats
     const listeningStats = await PlayHistory.getUserStats(userId, 30);
 
-    // Get top artists
     const topArtists = await PlayHistory.getTopArtists(userId, 5, 30);
 
-    // Get following count
     const followingCount = await Follow.countFollowing(userId);
     const followersCount = await Follow.countFollowers('user', userId);
 
@@ -169,9 +149,7 @@ const getUserStats = async (req, res, next) => {
   }
 };
 
-// @desc    Get user's listening history
-// @route   GET /api/users/history
-// @access  Private
+
 const getListeningHistory = async (req, res, next) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -189,9 +167,6 @@ const getListeningHistory = async (req, res, next) => {
   }
 };
 
-// @desc    Get user's recently played (unique)
-// @route   GET /api/users/recently-played
-// @access  Private
 const getRecentlyPlayed = async (req, res, next) => {
   try {
     const limit = parseInt(req.query.limit) || 20;
@@ -212,14 +187,11 @@ const getRecentlyPlayed = async (req, res, next) => {
   }
 };
 
-// @desc    Delete user account
-// @route   DELETE /api/users/account
-// @access  Private
+
 const deleteAccount = async (req, res, next) => {
   try {
     const { password } = req.body;
 
-    // Verify password before deletion
     const user = await User.findById(req.user._id).select('+password');
 
     if (!user.googleId) {
@@ -229,11 +201,9 @@ const deleteAccount = async (req, res, next) => {
       }
     }
 
-    // Soft delete - deactivate account
     user.isActive = false;
     await user.save();
-
-    // Revoke all tokens
+    
     const RefreshToken = require('../models/RefreshToken');
     await RefreshToken.revokeAllUserTokens(user._id);
 

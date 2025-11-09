@@ -1,10 +1,7 @@
-
-
 const { User, Artist, Song, Album } = require('../models');
 const ApiResponse = require('../utils/apiResponse');
 const { uploadAudio, uploadImage, uploadProfilePicture, deleteFile } = require('../utils/cloudinaryUpload');
 const mongoose = require('mongoose');
-
 
 const adminUploadSong = async (req, res, next) => {
   try {
@@ -66,7 +63,7 @@ const addSongWithUrl = async (req, res, next) => {
       audioFile: {
         url: audioUrl,
         publicId: 'external-' + Date.now(),
-        duration: duration || 180, // Default 3 minutes
+        duration: duration || 180, 
         format: 'mp3',
         size: 0
       },
@@ -136,8 +133,6 @@ const bulkAddSongsWithUrl = async (req, res, next) => {
 };
 
 
-
-
 const adminUploadAlbumBulk = async (req, res, next) => {
   try {
     const { albums } = req.body;
@@ -151,7 +146,6 @@ const adminUploadAlbumBulk = async (req, res, next) => {
     next(err);
   }
 };
-
 
 const createArtistByAdmin = async (req, res, next) => {
   try {

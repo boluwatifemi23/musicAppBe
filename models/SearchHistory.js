@@ -50,7 +50,7 @@ searchHistorySchema.statics.getUserSearchHistory = function(userId, limit = 20) 
 // Static method: Get recent searches (unique queries)
 searchHistorySchema.statics.getRecentSearches = async function(userId, limit = 10) {
   return this.aggregate([
-    { $match: { userId: mongoose.Types.ObjectId(userId) } },
+    { $match: { userId: new mongoose.Types.ObjectId(userId) } },
     { $sort: { searchedAt: -1 } },
     { $group: {
         _id: '$query',

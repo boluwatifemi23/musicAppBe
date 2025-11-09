@@ -1,5 +1,3 @@
-// controllers/likeController.js - Like/Unlike Controller
-
 const { Like, Song, Album, Playlist } = require('../models');
 const ApiResponse = require('../utils/apiResponse');
 
@@ -8,16 +6,16 @@ const toggleLikeSong = async (req, res, next) => {
   try {
     const songId = req.params.id;
 
-    // Check if song exists
+    
     const song = await Song.findById(songId);
     if (!song) {
       return ApiResponse.notFound(res, 'Song not found');
     }
 
-    // Toggle like
+   
     const result = await Like.toggleLike(req.user._id, 'song', songId);
 
-    // Update song like count
+  
     if (result.liked) {
       await song.incrementLikeCount();
     } else {
@@ -35,16 +33,14 @@ const toggleLikeAlbum = async (req, res, next) => {
   try {
     const albumId = req.params.id;
 
-    // Check if album exists
+   
     const album = await Album.findById(albumId);
     if (!album) {
       return ApiResponse.notFound(res, 'Album not found');
     }
 
-    // Toggle like
     const result = await Like.toggleLike(req.user._id, 'album', albumId);
 
-    // Update album like count
     if (result.liked) {
       album.stats.likes += 1;
     } else {
@@ -63,16 +59,14 @@ const toggleLikePlaylist = async (req, res, next) => {
   try {
     const playlistId = req.params.id;
 
-    // Check if playlist exists
     const playlist = await Playlist.findById(playlistId);
     if (!playlist) {
       return ApiResponse.notFound(res, 'Playlist not found');
     }
 
-    // Toggle like
     const result = await Like.toggleLike(req.user._id, 'playlist', playlistId);
 
-    // Update playlist follower count
+
     if (result.liked) {
       playlist.stats.followers += 1;
     } else {
@@ -86,9 +80,6 @@ const toggleLikePlaylist = async (req, res, next) => {
   }
 };
 
-// @desc    Get user's liked songs
-// @route   GET /api/likes/songs
-// @access  Private
 const getLikedSongs = async (req, res, next) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -111,9 +102,7 @@ const getLikedSongs = async (req, res, next) => {
   }
 };
 
-// @desc    Get user's liked albums
-// @route   GET /api/likes/albums
-// @access  Private
+
 const getLikedAlbums = async (req, res, next) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -162,7 +151,7 @@ const getLikedPlaylists = async (req, res, next) => {
 
 const checkLikes = async (req, res, next) => {
   try {
-    const { items } = req.body; // [{ type: 'song', id: '...' }, ...]
+    const { items } = req.body; 
 
     const results = {};
 

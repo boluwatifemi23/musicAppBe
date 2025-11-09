@@ -1,11 +1,8 @@
-// controllers/uploadController.js - File Upload Controller
+
 
 const ApiResponse = require('../utils/apiResponse');
 const { uploadImage, uploadAudio, deleteFile } = require('../utils/cloudinaryUpload');
 
-// @desc    Upload single image
-// @route   POST /api/upload/image
-// @access  Private
 const uploadSingleImage = async (req, res, next) => {
   try {
     if (!req.file) {
@@ -30,9 +27,7 @@ const uploadSingleImage = async (req, res, next) => {
   }
 };
 
-// @desc    Upload audio file
-// @route   POST /api/upload/audio
-// @access  Private (Artist only)
+
 const uploadAudioFile = async (req, res, next) => {
   try {
     if (!req.file) {
@@ -57,13 +52,11 @@ const uploadAudioFile = async (req, res, next) => {
   }
 };
 
-// @desc    Delete file from Cloudinary
-// @route   DELETE /api/upload/:publicId
-// @access  Private
+
 const deleteUploadedFile = async (req, res, next) => {
   try {
     const { publicId } = req.params;
-    const { resourceType } = req.query; // 'image' or 'video' (for audio)
+    const { resourceType } = req.query;
 
     if (!publicId) {
       return ApiResponse.error(res, 'Public ID is required', 400);

@@ -1,25 +1,21 @@
-// controllers/followController.js - Follow/Unfollow Controller
-
 const { Follow, Artist, User, Playlist } = require('../models');
 const ApiResponse = require('../utils/apiResponse');
 
-// @desc    Toggle follow artist
-// @route   POST /api/follows/artist/:id
-// @access  Private
+
 const toggleFollowArtist = async (req, res, next) => {
   try {
     const artistId = req.params.id;
 
-    // Check if artist exists
+    
     const artist = await Artist.findById(artistId);
     if (!artist) {
       return ApiResponse.notFound(res, 'Artist not found');
     }
 
-    // Toggle follow
+    
     const result = await Follow.toggleFollow(req.user._id, 'artist', artistId);
 
-    // Update artist follower count
+    
     if (result.following) {
       artist.stats.totalFollowers += 1;
       req.user.stats.totalFollowing += 1;
@@ -37,28 +33,26 @@ const toggleFollowArtist = async (req, res, next) => {
   }
 };
 
-// @desc    Toggle follow user
-// @route   POST /api/follows/user/:id
-// @access  Private
+
 const toggleFollowUser = async (req, res, next) => {
   try {
     const targetUserId = req.params.id;
 
-    // Can't follow yourself
+  
     if (targetUserId === req.user._id.toString()) {
       return ApiResponse.error(res, 'You cannot follow yourself', 400);
     }
 
-    // Check if user exists
+
     const targetUser = await User.findById(targetUserId);
     if (!targetUser) {
       return ApiResponse.notFound(res, 'User not found');
     }
 
-    // Toggle follow
+    
     const result = await Follow.toggleFollow(req.user._id, 'user', targetUserId);
 
-    // Update follower counts
+    
     if (result.following) {
       targetUser.stats.totalFollowers += 1;
       req.user.stats.totalFollowing += 1;
@@ -76,9 +70,6 @@ const toggleFollowUser = async (req, res, next) => {
   }
 };
 
-// @desc    Get followed artists
-// @route   GET /api/follows/artists
-// @access  Private
 const getFollowedArtists = async (req, res, next) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -98,9 +89,7 @@ const getFollowedArtists = async (req, res, next) => {
   }
 };
 
-// @desc    Get followed users
-// @route   GET /api/follows/users
-// @access  Private
+
 const getFollowedUsers = async (req, res, next) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -120,9 +109,6 @@ const getFollowedUsers = async (req, res, next) => {
   }
 };
 
-// @desc    Get user's followers
-// @route   GET /api/follows/followers
-// @access  Private
 const getFollowers = async (req, res, next) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -142,9 +128,7 @@ const getFollowers = async (req, res, next) => {
   }
 };
 
-// @desc    Get artist followers
-// @route   GET /api/follows/artist/:id/followers
-// @access  Public
+
 const getArtistFollowers = async (req, res, next) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -164,12 +148,10 @@ const getArtistFollowers = async (req, res, next) => {
   }
 };
 
-// @desc    Check if following
-// @route   POST /api/follows/check
-// @access  Private
+
 const checkFollowing = async (req, res, next) => {
   try {
-    const { items } = req.body; // [{ type: 'artist', id: '...' }, ...]
+    const { items } = req.body; 
 
     const results = {};
 

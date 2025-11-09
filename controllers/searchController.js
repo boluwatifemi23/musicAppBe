@@ -1,11 +1,6 @@
-// controllers/searchController.js - Search Controller
-
 const { Song, Album, Artist, Playlist, SearchHistory } = require('../models');
 const ApiResponse = require('../utils/apiResponse');
 
-// @desc    Search all (songs, albums, artists, playlists)
-// @route   GET /api/search?q=query
-// @access  Public
 const searchAll = async (req, res, next) => {
   try {
     const query = req.query.q;
@@ -15,7 +10,7 @@ const searchAll = async (req, res, next) => {
       return ApiResponse.error(res, 'Search query is required', 400);
     }
 
-    // Search in parallel
+    
     const [songs, albums, artists, playlists] = await Promise.all([
       Song.searchSongs(query, limit),
       Album.find({
@@ -31,7 +26,6 @@ const searchAll = async (req, res, next) => {
       Playlist.searchPlaylists(query, limit)
     ]);
 
-    // Save search history if user is logged in
     if (req.user) {
       await SearchHistory.create({
         userId: req.user._id,
@@ -56,9 +50,6 @@ const searchAll = async (req, res, next) => {
   }
 };
 
-// @desc    Search songs
-// @route   GET /api/search/songs?q=query
-// @access  Public
 const searchSongs = async (req, res, next) => {
   try {
     const query = req.query.q;
@@ -72,7 +63,7 @@ const searchSongs = async (req, res, next) => {
     const songs = await Song.searchSongs(query, limit)
       .skip((page - 1) * limit);
 
-    // Save search history
+
     if (req.user) {
       await SearchHistory.create({
         userId: req.user._id,
@@ -88,9 +79,7 @@ const searchSongs = async (req, res, next) => {
   }
 };
 
-// @desc    Search albums
-// @route   GET /api/search/albums?q=query
-// @access  Public
+
 const searchAlbums = async (req, res, next) => {
   try {
     const query = req.query.q;
@@ -110,7 +99,6 @@ const searchAlbums = async (req, res, next) => {
       .limit(limit)
       .populate('artistId', 'artistName profilePicture');
 
-    // Save search history
     if (req.user) {
       await SearchHistory.create({
         userId: req.user._id,
@@ -126,9 +114,7 @@ const searchAlbums = async (req, res, next) => {
   }
 };
 
-// @desc    Search artists
-// @route   GET /api/search/artists?q=query
-// @access  Public
+
 const searchArtists = async (req, res, next) => {
   try {
     const query = req.query.q;
@@ -142,7 +128,6 @@ const searchArtists = async (req, res, next) => {
     const artists = await Artist.searchArtists(query, limit)
       .skip((page - 1) * limit);
 
-    // Save search history
     if (req.user) {
       await SearchHistory.create({
         userId: req.user._id,
@@ -158,9 +143,7 @@ const searchArtists = async (req, res, next) => {
   }
 };
 
-// @desc    Search playlists
-// @route   GET /api/search/playlists?q=query
-// @access  Public
+
 const searchPlaylists = async (req, res, next) => {
   try {
     const query = req.query.q;
@@ -174,7 +157,7 @@ const searchPlaylists = async (req, res, next) => {
     const playlists = await Playlist.searchPlaylists(query, limit)
       .skip((page - 1) * limit);
 
-    // Save search history
+    
     if (req.user) {
       await SearchHistory.create({
         userId: req.user._id,
@@ -190,9 +173,7 @@ const searchPlaylists = async (req, res, next) => {
   }
 };
 
-// @desc    Get search history
-// @route   GET /api/search/history
-// @access  Private
+
 const getSearchHistory = async (req, res, next) => {
   try {
     const limit = parseInt(req.query.limit) || 20;
@@ -205,9 +186,7 @@ const getSearchHistory = async (req, res, next) => {
   }
 };
 
-// @desc    Clear search history
-// @route   DELETE /api/search/history
-// @access  Private
+
 const clearSearchHistory = async (req, res, next) => {
   try {
     await SearchHistory.clearUserHistory(req.user._id);
@@ -218,9 +197,7 @@ const clearSearchHistory = async (req, res, next) => {
   }
 };
 
-// @desc    Get trending searches
-// @route   GET /api/search/trending
-// @access  Public
+
 const getTrendingSearches = async (req, res, next) => {
   try {
     const limit = parseInt(req.query.limit) || 10;

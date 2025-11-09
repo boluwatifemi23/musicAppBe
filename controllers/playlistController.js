@@ -1,5 +1,4 @@
 
-
 const { Playlist, Song, Like } = require('../models');
 const ApiResponse = require('../utils/apiResponse');
 const { uploadImage, deleteFile } = require('../utils/cloudinaryUpload');
@@ -16,7 +15,6 @@ const createPlaylist = async (req, res, next) => {
       isCollaborative: isCollaborative || false
     });
 
-    // Update user stats
     req.user.stats.totalPlaylistsCreated += 1;
     await req.user.save({ validateBeforeSave: false });
 
@@ -61,13 +59,11 @@ const getPlaylist = async (req, res, next) => {
       return ApiResponse.notFound(res, 'Playlist not found');
     }
 
-    // Check if playlist is private and user is not the owner
     if (!playlist.isPublic && 
         (!req.user || req.user._id.toString() !== playlist.userId._id.toString())) {
       return ApiResponse.forbidden(res, 'This playlist is private');
     }
 
-    // Check if user is following this playlist
     let isFollowing = false;
     if (req.user) {
       const Like = require('../models/Like');
@@ -97,7 +93,6 @@ const updatePlaylist = async (req, res, next) => {
       return ApiResponse.notFound(res, 'Playlist not found');
     }
 
-    // Check if user can edit
     if (!playlist.canEdit(req.user._id)) {
       return ApiResponse.forbidden(res, 'Not authorized to edit this playlist');
     }
@@ -117,9 +112,7 @@ const updatePlaylist = async (req, res, next) => {
   }
 };
 
-// @desc    Update playlist cover
-// @route   PUT /api/playlists/:id/cover
-// @access  Private
+
 const updatePlaylistCover = async (req, res, next) => {
   try {
     if (!req.file) {
@@ -132,17 +125,17 @@ const updatePlaylistCover = async (req, res, next) => {
       return ApiResponse.notFound(res, 'Playlist not found');
     }
 
-    // Check if user can edit
+   
     if (!playlist.canEdit(req.user._id)) {
       return ApiResponse.forbidden(res, 'Not authorized to edit this playlist');
     }
 
-    // Delete old cover
+
     if (playlist.coverImage.publicId) {
       await deleteFile(playlist.coverImage.publicId, 'image');
     }
 
-    // Upload new cover
+
     const result = await uploadImage(req.file.path);
 
     playlist.coverImage = {
@@ -162,9 +155,7 @@ const updatePlaylistCover = async (req, res, next) => {
   }
 };
 
-// @desc    Delete playlist
-// @route   DELETE /api/playlists/:id
-// @access  Private
+
 const deletePlaylist = async (req, res, next) => {
   try {
     const playlist = await Playlist.findById(req.params.id);
@@ -173,19 +164,19 @@ const deletePlaylist = async (req, res, next) => {
       return ApiResponse.notFound(res, 'Playlist not found');
     }
 
-    // Only owner can delete
+ 
     if (playlist.userId.toString() !== req.user._id.toString()) {
       return ApiResponse.forbidden(res, 'Not authorized to delete this playlist');
     }
 
-    // Delete cover image if exists
+   
     if (playlist.coverImage.publicId) {
       await deleteFile(playlist.coverImage.publicId, 'image');
     }
 
     await playlist.deleteOne();
 
-    // Update user stats
+  
     req.user.stats.totalPlaylistsCreated = Math.max(
       0,
       req.user.stats.totalPlaylistsCreated - 1
@@ -209,18 +200,16 @@ const addSongToPlaylist = async (req, res, next) => {
       return ApiResponse.notFound(res, 'Playlist not found');
     }
 
-    // Check if user can edit
+    
     if (!playlist.canEdit(req.user._id)) {
       return ApiResponse.forbidden(res, 'Not authorized to edit this playlist');
     }
 
-    // Check if song exists
     const song = await Song.findById(songId);
     if (!song) {
       return ApiResponse.notFound(res, 'Song not found');
     }
 
-    // Add song
     await playlist.addSong(songId);
 
     return ApiResponse.success(res, playlist, 'Song added to playlist');
@@ -228,6 +217,77 @@ const addSongToPlaylist = async (req, res, next) => {
     if (error.message === 'Song already in playlist') {
       return ApiResponse.error(res, error.message, 400);
     }
+    next(error);
+  }
+};
+
+const addMultipleSongsToPlaylist = async (req, res, next) => {
+  try {
+    const { songIds } = req.body;
+
+    if (!Array.isArray(songIds) || songIds.length === 0) {
+      return ApiResponse.error(res, 'songIds array is required', 400);
+    }
+
+    const playlist = await Playlist.findById(req.params.id);
+
+    if (!playlist) {
+      return ApiResponse.notFound(res, 'Playlist not found');
+    }
+
+    if (!playlist.canEdit(req.user._id)) {
+      return ApiResponse.forbidden(res, 'Not authorized to edit this playlist');
+    }
+
+    const addedSongs = [];
+    const skippedSongs = [];
+    const notFoundSongs = [];
+
+    for (const songId of songIds) {
+      
+      const song = await Song.findById(songId);
+      if (!song) {
+        notFoundSongs.push(songId);
+        continue;
+      }
+
+      
+      const exists = playlist.songs.some(s => s.songId.toString() === songId.toString());
+      if (exists) {
+        skippedSongs.push({
+          songId,
+          reason: 'Already in playlist'
+        });
+        continue;
+      }
+
+     
+      playlist.songs.push({ songId, addedAt: Date.now() });
+      addedSongs.push(songId);
+    }
+
+    await playlist.save();
+    await playlist.updateStats();
+
+    return ApiResponse.success(
+      res,
+      {
+        playlist,
+        summary: {
+          total: songIds.length,
+          added: addedSongs.length,
+          skipped: skippedSongs.length,
+          notFound: notFoundSongs.length
+        },
+        details: {
+          addedSongs,
+          skippedSongs,
+          notFoundSongs
+        }
+      },
+      `${addedSongs.length} songs added to playlist`
+    );
+  } catch (error) {
     next(error);
   }
 };
@@ -240,7 +300,6 @@ const removeSongFromPlaylist = async (req, res, next) => {
       return ApiResponse.notFound(res, 'Playlist not found');
     }
 
-    // Check if user can edit
     if (!playlist.canEdit(req.user._id)) {
       return ApiResponse.forbidden(res, 'Not authorized to edit this playlist');
     }
@@ -253,9 +312,13 @@ const removeSongFromPlaylist = async (req, res, next) => {
   }
 };
 
-const reorderPlaylist = async (req, res, next) => {
+const removeMultipleSongsFromPlaylist = async (req, res, next) => {
   try {
-    const { songOrder } = req.body; // Array of song IDs in new order
+    const { songIds } = req.body;
+
+    if (!Array.isArray(songIds) || songIds.length === 0) {
+      return ApiResponse.error(res, 'songIds array is required', 400);
+    }
 
     const playlist = await Playlist.findById(req.params.id);
 
@@ -263,7 +326,44 @@ const reorderPlaylist = async (req, res, next) => {
       return ApiResponse.notFound(res, 'Playlist not found');
     }
 
-    // Check if user can edit
+    if (!playlist.canEdit(req.user._id)) {
+      return ApiResponse.forbidden(res, 'Not authorized to edit this playlist');
+    }
+
+    const originalCount = playlist.songs.length;
+
+    playlist.songs = playlist.songs.filter(
+      s => !songIds.includes(s.songId.toString())
+    );
+
+    const removedCount = originalCount - playlist.songs.length;
+
+    await playlist.save();
+    await playlist.updateStats();
+
+    return ApiResponse.success(
+      res,
+      {
+        playlist,
+        removedCount
+      },
+      `${removedCount} songs removed from playlist`
+    );
+  } catch (error) {
+    next(error);
+  }
+};
+
+const reorderPlaylist = async (req, res, next) => {
+  try {
+    const { songOrder } = req.body;
+
+    const playlist = await Playlist.findById(req.params.id);
+
+    if (!playlist) {
+      return ApiResponse.notFound(res, 'Playlist not found');
+    }
+
     if (!playlist.canEdit(req.user._id)) {
       return ApiResponse.forbidden(res, 'Not authorized to edit this playlist');
     }
@@ -310,7 +410,6 @@ const addCollaborator = async (req, res, next) => {
       return ApiResponse.notFound(res, 'Playlist not found');
     }
 
-    // Only owner can add collaborators
     if (playlist.userId.toString() !== req.user._id.toString()) {
       return ApiResponse.forbidden(res, 'Only playlist owner can add collaborators');
     }
@@ -335,7 +434,6 @@ const removeCollaborator = async (req, res, next) => {
       return ApiResponse.notFound(res, 'Playlist not found');
     }
 
-    // Only owner can remove collaborators
     if (playlist.userId.toString() !== req.user._id.toString()) {
       return ApiResponse.forbidden(res, 'Only playlist owner can remove collaborators');
     }
@@ -356,7 +454,9 @@ module.exports = {
   updatePlaylistCover,
   deletePlaylist,
   addSongToPlaylist,
+  addMultipleSongsToPlaylist,
   removeSongFromPlaylist,
+  removeMultipleSongsFromPlaylist,
   reorderPlaylist,
   getPublicPlaylists,
   getCuratedPlaylists,

@@ -2,9 +2,7 @@ const asyncHandler = require("express-async-handler");
 const Music = require("../models/Music");
 const cloudinary = require("cloudinary").v2;
 
-// @desc Upload a song
-// @route POST /api/music/upload
-// @access Private
+
 exports.uploadMusic = asyncHandler(async (req, res) => {
   const { title, artist, genre } = req.body;
 
@@ -17,7 +15,7 @@ exports.uploadMusic = asyncHandler(async (req, res) => {
   const coverImage = req.files.coverImage;
 
   const audioUpload = await cloudinary.uploader.upload(audioFile.tempFilePath, {
-    resource_type: "video", // audio files are treated as 'video' by Cloudinary
+    resource_type: "video", 
     folder: "musicapp/audio",
   });
 
@@ -44,17 +42,13 @@ exports.uploadMusic = asyncHandler(async (req, res) => {
   });
 });
 
-// @desc Get all songs
-// @route GET /api/music
-// @access Public
+
 exports.getAllMusic = asyncHandler(async (req, res) => {
   const music = await Music.find().populate("uploadedBy", "name email");
   res.json({ success: true, count: music.length, music });
 });
 
-// @desc Like or unlike a song
-// @route PUT /api/music/like/:id
-// @access Private
+
 exports.toggleLike = asyncHandler(async (req, res) => {
   const song = await Music.findById(req.params.id);
 
@@ -79,9 +73,7 @@ exports.toggleLike = asyncHandler(async (req, res) => {
   });
 });
 
-// @desc Delete a song (Admin or Uploader only)
-// @route DELETE /api/music/:id
-// @access Private
+
 exports.deleteMusic = asyncHandler(async (req, res) => {
   const song = await Music.findById(req.params.id);
 

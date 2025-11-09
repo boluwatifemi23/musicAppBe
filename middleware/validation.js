@@ -1,12 +1,7 @@
-// middleware/validation.js - Input Validation using express-validator
-
 const { body, param, query, validationResult } = require('express-validator');
 const ApiResponse = require('../utils/apiResponse');
 
-/**
- * Validation result handler
- * Call this after validation rules to check for errors
- */
+
 const validate = (req, res, next) => {
   const errors = validationResult(req);
   
@@ -17,11 +12,9 @@ const validate = (req, res, next) => {
   next();
 };
 
-/**
- * Auth validation rules
- */
+
 const authValidation = {
-  // Signup validation
+
   signup: [
     body('name')
       .trim()
@@ -42,7 +35,7 @@ const authValidation = {
     validate
   ],
 
-  // Login validation
+
   login: [
     body('email')
       .trim()
@@ -56,7 +49,7 @@ const authValidation = {
     validate
   ],
 
-  // Email verification
+
   verifyEmail: [
     body('email')
       .trim()
@@ -73,7 +66,7 @@ const authValidation = {
     validate
   ],
 
-  // Forgot password
+
   forgotPassword: [
     body('email')
       .trim()
@@ -84,7 +77,7 @@ const authValidation = {
     validate
   ],
 
-  // Reset password
+
   resetPassword: [
     body('token')
       .notEmpty().withMessage('Reset token is required'),
@@ -98,9 +91,7 @@ const authValidation = {
   ]
 };
 
-/**
- * User validation rules
- */
+
 const userValidation = {
   updateProfile: [
     body('name')
@@ -117,9 +108,7 @@ const userValidation = {
   ]
 };
 
-/**
- * Song validation rules
- */
+
 const songValidation = {
   create: [
     body('title')
@@ -148,9 +137,7 @@ const songValidation = {
   ]
 };
 
-/**
- * Album validation rules
- */
+
 const albumValidation = {
   create: [
     body('title')
@@ -171,9 +158,7 @@ const albumValidation = {
   ]
 };
 
-/**
- * Playlist validation rules
- */
+
 const playlistValidation = {
   create: [
     body('name')
@@ -211,9 +196,7 @@ const playlistValidation = {
   ]
 };
 
-/**
- * Artist validation rules
- */
+
 const artistValidation = {
   create: [
     body('artistName')
@@ -230,9 +213,7 @@ const artistValidation = {
   ]
 };
 
-/**
- * MongoDB ID validation
- */
+
 const idValidation = [
   param('id')
     .isMongoId().withMessage('Invalid ID format'),
@@ -240,9 +221,7 @@ const idValidation = [
   validate
 ];
 
-/**
- * Pagination validation
- */
+
 const paginationValidation = [
   query('page')
     .optional()
