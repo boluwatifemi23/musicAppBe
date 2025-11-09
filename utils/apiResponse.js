@@ -1,4 +1,3 @@
-// utils/apiResponse.js - Standardized API response format
 
 class ApiResponse {
   /**

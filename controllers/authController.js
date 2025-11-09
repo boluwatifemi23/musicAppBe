@@ -10,16 +10,17 @@ const crypto = require('crypto');
 const signup = async (req, res, next) => {
   try {
     const { name, email, password } = req.body;
+
     const existingUser = await User.findByEmail(email);
     if (existingUser) {
       return ApiResponse.error(res, 'Email already registered', 400);
     }
 
-    
+   
     const otp = generateOTP(6);
     const otpExpiry = generateOTPExpiry(10); 
 
-    
+
     const user = await User.create({
       name,
       email,
@@ -52,7 +53,6 @@ const signup = async (req, res, next) => {
 const verifyEmail = async (req, res, next) => {
   try {
     const { email, otp } = req.body;
-
     const user = await User.findByEmail(email);
     if (!user) {
       return ApiResponse.error(res, 'User not found', 404);
@@ -63,7 +63,7 @@ const verifyEmail = async (req, res, next) => {
       return ApiResponse.error(res, 'Email already verified', 400);
     }
 
-    
+
     const validation = validateOTP(
       otp,
       user.verificationOtp.code,
@@ -79,10 +79,12 @@ const verifyEmail = async (req, res, next) => {
     user.clearVerificationOTP();
     await user.save();
 
-    
+
     await sendWelcomeEmail(user.email, user.name);
+
     const { accessToken, refreshToken } = generateTokens(user._id);
 
+    
     await RefreshToken.create({
       userId: user._id,
       token: refreshToken,
@@ -90,7 +92,7 @@ const verifyEmail = async (req, res, next) => {
         userAgent: req.headers['user-agent'] || 'Unknown',
         ip: req.ip || 'Unknown'
       },
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) 
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
     });
 
     
@@ -98,7 +100,7 @@ const verifyEmail = async (req, res, next) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000 
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
     });
 
     return ApiResponse.success(
@@ -135,7 +137,7 @@ const resendOTP = async (req, res, next) => {
       return ApiResponse.error(res, 'Email already verified', 400);
     }
 
-    
+   
     const otp = generateOTP(6);
     const otpExpiry = generateOTPExpiry(10);
 
@@ -145,7 +147,7 @@ const resendOTP = async (req, res, next) => {
     };
     await user.save();
 
-    
+  
     await sendOTPEmail(email, otp, user.name);
 
     return ApiResponse.success(
@@ -163,17 +165,18 @@ const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
-    
+  
     const user = await User.findByEmail(email).select('+password');
     if (!user) {
       return ApiResponse.error(res, 'Invalid email or password', 401);
     }
 
+   
     if (!user.isActive) {
       return ApiResponse.error(res, 'Account is deactivated', 403);
     }
 
-    
+ 
     const isPasswordValid = await user.comparePassword(password);
     if (!isPasswordValid) {
       return ApiResponse.error(res, 'Invalid email or password', 401);
@@ -189,10 +192,10 @@ const login = async (req, res, next) => {
       );
     }
 
-    
+ 
     const { accessToken, refreshToken } = generateTokens(user._id);
 
-    
+ 
     await RefreshToken.create({
       userId: user._id,
       token: refreshToken,
@@ -203,7 +206,7 @@ const login = async (req, res, next) => {
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
     });
 
-    
+   
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -235,6 +238,8 @@ const login = async (req, res, next) => {
 };
 
 
+
+
 const refreshAccessToken = async (req, res, next) => {
   try {
     const { refreshToken: tokenFromBody } = req.body;
@@ -246,11 +251,13 @@ const refreshAccessToken = async (req, res, next) => {
       return ApiResponse.error(res, 'Refresh token not provided', 401);
     }
 
+    
     const tokenDoc = await RefreshToken.findValidToken(refreshToken);
     if (!tokenDoc) {
       return ApiResponse.error(res, 'Invalid or expired refresh token', 401);
     }
 
+    
     let decoded;
     try {
       decoded = verifyRefreshToken(refreshToken);
@@ -295,12 +302,12 @@ const refreshAccessToken = async (req, res, next) => {
   }
 };
 
+
 const logout = async (req, res, next) => {
   try {
     const refreshToken = req.cookies.refreshToken;
 
     if (refreshToken) {
-      
       await RefreshToken.findOneAndUpdate(
         { token: refreshToken },
         { isRevoked: true }
@@ -335,7 +342,7 @@ const forgotPassword = async (req, res, next) => {
 
     const user = await User.findByEmail(email);
     if (!user) {
-     
+      
       return ApiResponse.success(
         res,
         null,
@@ -352,7 +359,7 @@ const forgotPassword = async (req, res, next) => {
     user.passwordResetExpires = Date.now() + 60 * 60 * 1000; 
     await user.save();
 
-   
+    
     await sendPasswordResetEmail(email, resetToken, user.name);
 
     return ApiResponse.success(
@@ -370,13 +377,12 @@ const resetPassword = async (req, res, next) => {
   try {
     const { token, newPassword } = req.body;
 
-   
+    
     const hashedToken = crypto
       .createHash('sha256')
       .update(token)
       .digest('hex');
 
-    
     const user = await User.findOne({
       passwordResetToken: hashedToken,
       passwordResetExpires: { $gt: Date.now() }
@@ -391,6 +397,7 @@ const resetPassword = async (req, res, next) => {
     user.passwordResetExpires = undefined;
     await user.save();
 
+  
     await RefreshToken.revokeAllUserTokens(user._id);
 
     return ApiResponse.success(res, null, 'Password reset successful');

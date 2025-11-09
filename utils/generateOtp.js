@@ -1,5 +1,3 @@
-// utils/generateOtp.js - OTP Generation & Validation
-
 const otpGenerator = require('otp-generator');
 
 /**
@@ -50,7 +48,7 @@ const validateOTP = (inputOtp, storedOtp, expiryTime) => {
     };
   }
 
-  // Check if OTP matches
+
   if (inputOtp !== storedOtp) {
     return {
       valid: false,
