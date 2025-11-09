@@ -1,5 +1,3 @@
-// routes/artistRoutes.js - Artist Routes (Standalone)
-
 const express = require('express');
 const router = express.Router();
 const artistController = require('../controllers/artistController');
@@ -10,14 +8,14 @@ const { idValidation, paginationValidation } = require('../middleware/validation
 const { uploadLimiter } = require('../middleware/rateLimiter');
 
 
-// Public routes
+
 router.get('/featured', artistController.getFeaturedArtists);
 router.get('/popular', artistController.getPopularArtists);
 router.get('/:id', idValidation, artistController.getArtist);
 router.get('/:id/songs', idValidation, paginationValidation, artistController.getArtistSongs);
 router.get('/:id/albums', idValidation, paginationValidation, artistController.getArtistAlbums);
 
-// Protected routes (Artist profile management)
+
 router.post(
     '/',
     protect,

@@ -1,12 +1,10 @@
-// routes/likeRoutes.js - Like/Unlike Routes
-
 const express = require('express');
 const router = express.Router();
 const likeController = require('../controllers/likeController');
 const { protect } = require('../middleware/authMiddleware');
 const { idValidation, paginationValidation } = require('../middleware/validation');
 
-// All routes are protected (must be logged in to like)
+
 router.post('/song/:id', protect, idValidation, likeController.toggleLikeSong);
 router.post('/album/:id', protect, idValidation, likeController.toggleLikeAlbum);
 router.post('/playlist/:id', protect, idValidation, likeController.toggleLikePlaylist);

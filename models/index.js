@@ -1,5 +1,3 @@
-// models/index.js - Export all models
-
 const User = require('./User');
 const RefreshToken = require('./RefreshToken');
 const Artist = require('./Artist');

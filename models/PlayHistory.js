@@ -1,13 +1,10 @@
-// models/PlayHistory.js - Listening History Model
-
 const mongoose = require('mongoose');
 
 const playHistorySchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true,
-    // index: true
+    required: true
   },
   songId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -15,51 +12,38 @@ const playHistorySchema = new mongoose.Schema({
     required: true,
     index: true
   },
-  
-  // Playback details
   playedAt: {
     type: Date,
-    default: Date.now,
-    // index: true
+    default: Date.now
   },
   duration: {
-    type: Number, // How long user listened (in seconds)
+    type: Number,
     default: 0
   },
   completionPercentage: {
-    type: Number, // Percentage of song played (0-100)
+    type: Number,
     default: 0
   },
-  
-  // Context (where did they play it from?)
   context: {
     type: {
       type: String,
       enum: ['playlist', 'album', 'artist', 'search', 'radio', 'recommendations'],
       default: 'search'
     },
-    id: mongoose.Schema.Types.ObjectId // Playlist/Album ID if applicable
+    id: {
+      type: mongoose.Schema.Types.ObjectId
+    }
   },
-  
-  // Device info
   device: {
     type: String,
     default: 'web'
   }
-}, {
-  timestamps: false
 });
 
-// Indexes for efficient queries
-// playHistorySchema.index({ userId: 1, playedAt: -1 });
-// playHistorySchema.index({ songId: 1, playedAt: -1 });
 playHistorySchema.index({ userId: 1, songId: 1, playedAt: -1 });
-
-// TTL index - automatically delete history older than 90 days (optional)
 playHistorySchema.index({ playedAt: 1 }, { expireAfterSeconds: 90 * 24 * 60 * 60 });
 
-// Static method: Get user's listening history
-playHistorySchema.statics.getUserHistory = function(userId, page = 1, limit = 50) {
+playHistorySchema.statics.getUserHistory = function (userId, page = 1, limit = 50) {
   return this.find({ userId })
     .sort({ playedAt: -1 })
     .skip((page - 1) * limit)
@@ -70,12 +54,12 @@ playHistorySchema.statics.getUserHistory = function(userId, page = 1, limit = 50
     });
 };
 
-// Static method: Get recently played (unique songs)
-playHistorySchema.statics.getRecentlyPlayed = async function(userId, limit = 20) {
+playHistorySchema.statics.getRecentlyPlayed = async function (userId, limit = 20) {
   const recent = await this.aggregate([
     { $match: { userId: mongoose.Types.ObjectId(userId) } },
     { $sort: { playedAt: -1 } },
-    { $group: {
+    {
+      $group: {
         _id: '$songId',
         lastPlayed: { $first: '$playedAt' },
         playCount: { $sum: 1 }
@@ -84,22 +68,21 @@ playHistorySchema.statics.getRecentlyPlayed = async function(userId, limit = 20)
     { $sort: { lastPlayed: -1 } },
     { $limit: limit }
   ]);
-  
-  // Populate song details
+
   await this.populate(recent, {
     path: '_id',
     model: 'Song',
     populate: { path: 'artistId', select: 'artistName profilePicture' }
   });
-  
+
   return recent;
 };
 
-// Static method: Get most played songs by user
-playHistorySchema.statics.getMostPlayed = function(userId, limit = 20) {
+playHistorySchema.statics.getMostPlayed = function (userId, limit = 20) {
   return this.aggregate([
     { $match: { userId: mongoose.Types.ObjectId(userId) } },
-    { $group: {
+    {
+      $group: {
         _id: '$songId',
         playCount: { $sum: 1 },
         totalDuration: { $sum: '$duration' },
@@ -111,19 +94,18 @@ playHistorySchema.statics.getMostPlayed = function(userId, limit = 20) {
   ]);
 };
 
-// Static method: Get listening stats
-playHistorySchema.statics.getUserStats = async function(userId, days = 30) {
+playHistorySchema.statics.getUserStats = async function (userId, days = 30) {
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - days);
-  
+
   const stats = await this.aggregate([
-    { 
-      $match: { 
+    {
+      $match: {
         userId: mongoose.Types.ObjectId(userId),
         playedAt: { $gte: startDate }
-      } 
+      }
     },
-    { 
+    {
       $group: {
         _id: null,
         totalPlays: { $sum: 1 },
@@ -140,21 +122,20 @@ playHistorySchema.statics.getUserStats = async function(userId, days = 30) {
       }
     }
   ]);
-  
+
   return stats[0] || { totalPlays: 0, totalMinutes: 0, uniqueSongs: 0 };
 };
 
-// Static method: Get top artists by user
-playHistorySchema.statics.getTopArtists = async function(userId, limit = 10, days = 30) {
+playHistorySchema.statics.getTopArtists = async function (userId, limit = 10, days = 30) {
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - days);
-  
+
   return this.aggregate([
-    { 
-      $match: { 
+    {
+      $match: {
         userId: mongoose.Types.ObjectId(userId),
         playedAt: { $gte: startDate }
-      } 
+      }
     },
     {
       $lookup: {

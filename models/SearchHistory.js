@@ -1,5 +1,3 @@
-// models/SearchHistory.js - Search History Model
-
 const mongoose = require('mongoose');
 
 const searchHistorySchema = new mongoose.Schema({
@@ -26,28 +24,24 @@ const searchHistorySchema = new mongoose.Schema({
   searchedAt: {
     type: Date,
     default: Date.now,
-    // index: true
+  
   }
 }, {
   timestamps: false
 });
 
-// Indexes
 searchHistorySchema.index({ userId: 1, searchedAt: -1 });
 searchHistorySchema.index({ query: 1 });
 
-// TTL index - automatically delete search history older than 90 days
 searchHistorySchema.index({ searchedAt: 1 }, { expireAfterSeconds: 90 * 24 * 60 * 60 });
 
-// Static method: Get user's search history
 searchHistorySchema.statics.getUserSearchHistory = function(userId, limit = 20) {
   return this.find({ userId })
-    // .sort({ searchedAt: -1 })
     .limit(limit)
     .select('query searchedAt resultType');
 };
 
-// Static method: Get recent searches (unique queries)
+
 searchHistorySchema.statics.getRecentSearches = async function(userId, limit = 10) {
   return this.aggregate([
     { $match: { userId: new mongoose.Types.ObjectId(userId) } },
@@ -64,7 +58,7 @@ searchHistorySchema.statics.getRecentSearches = async function(userId, limit = 1
   ]);
 };
 
-// Static method: Get trending searches (global)
+
 searchHistorySchema.statics.getTrendingSearches = function(limit = 10, hours = 24) {
   const startDate = new Date();
   startDate.setHours(startDate.getHours() - hours);
@@ -82,12 +76,12 @@ searchHistorySchema.statics.getTrendingSearches = function(limit = 10, hours = 2
   ]);
 };
 
-// Static method: Clear user's search history
+
 searchHistorySchema.statics.clearUserHistory = function(userId) {
   return this.deleteMany({ userId });
 };
 
-// Static method: Delete specific search
+
 searchHistorySchema.statics.deleteSearch = function(userId, query) {
   return this.deleteMany({ userId, query });
 };

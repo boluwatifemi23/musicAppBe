@@ -26,16 +26,16 @@ const genreSchema = new mongoose.Schema({
   },
   color: {
     type: String,
-    default: '#667eea' // Hex color for UI
+    default: '#667eea' 
   },
   
-  // Stats
+
   songCount: {
     type: Number,
     default: 0
   },
   
-  // Featured
+  
   isFeatured: {
     type: Boolean,
     default: false
@@ -48,12 +48,10 @@ const genreSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Indexes
-// genreSchema.index({ name: 1 });
-// genreSchema.index({ slug: 1 });
+
 genreSchema.index({ isFeatured: 1 });
 
-// Generate slug before saving
+
 genreSchema.pre('save', function(next) {
   if (this.isModified('name')) {
     this.slug = this.name
@@ -64,13 +62,13 @@ genreSchema.pre('save', function(next) {
   next();
 });
 
-// Static method: Find featured genres
+
 genreSchema.statics.findFeatured = function() {
   return this.find({ isFeatured: true, isActive: true })
     .sort({ songCount: -1 });
 };
 
-// Static method: Find popular genres
+
 genreSchema.statics.findPopular = function(limit = 20) {
   return this.find({ isActive: true })
     .sort({ songCount: -1 })

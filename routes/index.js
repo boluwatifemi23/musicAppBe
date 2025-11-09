@@ -1,11 +1,9 @@
-// routes/index.js - Export all routes
-
 const authRoutes = require('./authRoutes');
 const userRoutes = require('./userRoutes');
-const musicRoutes = require('./musicRoutes'); // Combined songs, albums, artists
-const artistRoutes = require('./artistRoutes'); // Standalone artist routes
-const songRoutes = require('./songRoutes'); // Standalone song routes
-const albumRoutes = require('./albumRoutes'); // Standalone album routes
+const musicRoutes = require('./musicRoutes'); 
+const artistRoutes = require('./artistRoutes'); 
+const songRoutes = require('./songRoutes'); 
+const albumRoutes = require('./albumRoutes'); 
 const playlistRoutes = require('./playlistRoutes');
 const searchRoutes = require('./searchRoutes');
 const likeRoutes = require('./likeRoutes');

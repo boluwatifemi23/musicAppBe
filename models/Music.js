@@ -15,11 +15,11 @@ const musicSchema = new mongoose.Schema(
       required: [true, "Please specify the genre"],
     },
     coverImage: {
-      type: String, // Cloudinary URL
+      type: String, 
       default: "",
     },
     audioFile: {
-      type: String, // Cloudinary URL
+      type: String,
       required: [true, "Please upload an audio file"],
     },
     uploadedBy: {

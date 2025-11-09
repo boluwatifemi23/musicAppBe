@@ -1,18 +1,16 @@
-// models/Artist.js - Artist Model
 
 const mongoose = require('mongoose');
 
 const artistSchema = new mongoose.Schema({
-  // Link to User account
+ 
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true,
     unique: true,
-    // index: true
+    
   },
-  
-  // Artist Profile
+ 
   artistName: {
     type: String,
     required: [true, 'Artist name is required'],
@@ -37,13 +35,13 @@ const artistSchema = new mongoose.Schema({
     publicId: String
   },
   
-  // Genres
+
   genres: [{
     type: String,
     trim: true
   }],
   
-  // Social Links
+  
   socialLinks: {
     instagram: String,
     twitter: String,
@@ -53,14 +51,14 @@ const artistSchema = new mongoose.Schema({
     website: String
   },
   
-  // Verification Status
+ 
   isVerified: {
     type: Boolean,
     default: false
   },
   verifiedAt: Date,
   
-  // Statistics
+  
   stats: {
     totalSongs: {
       type: Number,
@@ -84,14 +82,14 @@ const artistSchema = new mongoose.Schema({
     }
   },
   
-  // Featured
+  
   isFeatured: {
     type: Boolean,
     default: false
   },
   featuredAt: Date,
   
-  // Status
+  
   isActive: {
     type: Boolean,
     default: true
@@ -102,71 +100,71 @@ const artistSchema = new mongoose.Schema({
   toObject: { virtuals: true }
 });
 
-// Indexes
+
 artistSchema.index({ artistName: 1 });
 artistSchema.index({ userId: 1 });
 artistSchema.index({ isVerified: 1 });
-artistSchema.index({ 'stats.totalFollowers': -1 }); // For popular artists
+artistSchema.index({ 'stats.totalFollowers': -1 }); 
 artistSchema.index({ createdAt: -1 });
 
-// Virtual: Get all songs by this artist
+
 artistSchema.virtual('songs', {
   ref: 'Song',
   localField: '_id',
   foreignField: 'artistId'
 });
 
-// Virtual: Get all albums by this artist
+
 artistSchema.virtual('albums', {
   ref: 'Album',
   localField: '_id',
   foreignField: 'artistId'
 });
 
-// Virtual: Artist profile URL
+
 artistSchema.virtual('profileUrl').get(function() {
   return `${process.env.CLIENT_URL}/artist/${this._id}`;
 });
 
-// Instance method: Verify artist
+
 artistSchema.methods.verify = async function() {
   this.isVerified = true;
   this.verifiedAt = Date.now();
   await this.save();
 };
 
-// Instance method: Update statistics
+
 artistSchema.methods.updateStats = async function(field, value) {
   this.stats[field] = value;
   await this.save();
 };
 
-// Instance method: Increment play count
+
 artistSchema.methods.incrementPlayCount = async function() {
   this.stats.totalPlays += 1;
   await this.save({ validateBeforeSave: false });
 };
 
-// Static method: Find verified artists
+
 artistSchema.statics.findVerified = function() {
   return this.find({ isVerified: true, isActive: true });
 };
 
-// Static method: Find featured artists
+
 artistSchema.statics.findFeatured = function(limit = 10) {
   return this.find({ isFeatured: true, isActive: true })
     .sort({ featuredAt: -1 })
     .limit(limit);
 };
 
-// Static method: Find popular artists
+
 artistSchema.statics.findPopular = function(limit = 20) {
   return this.find({ isActive: true })
     .sort({ 'stats.totalFollowers': -1 })
     .limit(limit);
 };
 
-// Static method: Search artists
+
 artistSchema.statics.searchArtists = function(query, limit = 20) {
   return this.find({
     isActive: true,
