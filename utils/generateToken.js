@@ -1,5 +1,3 @@
-// utils/generateToken.js - JWT Token Generation
-
 const jwt = require('jsonwebtoken');
 
 /**
@@ -9,8 +7,8 @@ const jwt = require('jsonwebtoken');
  */
 const generateAccessToken = (userId) => {
   return jwt.sign(
-    { userId }, // Payload
-    process.env.JWT_SECRET, // Secret key
+    { userId }, 
+    process.env.JWT_SECRET, 
     { expiresIn: process.env.JWT_EXPIRES_IN} 
   );
 };
@@ -23,7 +21,7 @@ const generateAccessToken = (userId) => {
 const generateRefreshToken = (userId) => {
   return jwt.sign(
     { userId },
-    process.env.JWT_REFRESH_SECRET, // Different secret for refresh tokens
+    process.env.JWT_REFRESH_SECRET, 
     { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN} 
   );
 };

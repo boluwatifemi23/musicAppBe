@@ -1,4 +1,4 @@
-// routes/songRoutes.js - Song Routes (Standalone)
+
 
 const express = require('express');
 const router = express.Router();
@@ -9,7 +9,7 @@ const { uploadSong } = require('../middleware/uploadMiddleware');
 const { songValidation, idValidation, paginationValidation } = require('../middleware/validation');
 const { uploadLimiter } = require('../middleware/rateLimiter');
 
-// Public routes
+
 router.get('/', paginationValidation, songController.getSongs);
 router.get('/trending', songController.getTrendingSongs);
 router.get('/popular', songController.getPopularSongs);
@@ -18,7 +18,7 @@ router.get('/genre/:genre', songController.getSongsByGenre);
 router.get('/stream/:id', songController.streamSong);
 router.get('/:id', optionalAuth, idValidation, songController.getSong);
 
-// Protected routes
+
 router.post('/', protect, isArtist, uploadLimiter, uploadSong, songValidation.create, songController.createSong);
 router.post('/:id/play', optionalAuth, idValidation, songController.trackPlay);
 router.get('/recommendations', protect, songController.getRecommendations);

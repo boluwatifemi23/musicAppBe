@@ -50,10 +50,10 @@ app.use(helmet({
   }
 }));
 
-// CORS
+
 app.use(corsMiddleware);
 
-// Body parsing middleware
+
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
@@ -84,7 +84,7 @@ app.get('/health', (req, res) => {
   });
 });
 
-// API Routes
+
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/artists', artistRoutes);
@@ -97,7 +97,6 @@ app.use('/api/follows', followRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/admin', adminRoutes);
 
-// 404 handler
 app.use((req, res) => {
   res.status(404).json({
     success: false,
@@ -109,7 +108,7 @@ app.use((req, res) => {
 
 app.use(errorHandler);
 
-// Start server
+
 const PORT = process.env.PORT || 5009;
 
 const server = app.listen(PORT, () => {

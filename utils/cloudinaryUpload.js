@@ -15,13 +15,13 @@ const uploadImage = async (filePath, folder = 'music-app/images') => {
       folder: folder,
       resource_type: 'image',
       transformation: [
-        { width: 1000, height: 1000, crop: 'limit' }, // Max dimensions
-        { quality: 'auto' }, // Auto quality
-        { fetch_format: 'auto' } // Auto format (WebP if supported)
+        { width: 1000, height: 1000, crop: 'limit' }, 
+        { quality: 'auto' }, 
+        { fetch_format: 'auto' } 
       ]
     });
 
-    // Delete local file after upload
+    
     fs.unlinkSync(filePath);
 
     return {
@@ -32,7 +32,7 @@ const uploadImage = async (filePath, folder = 'music-app/images') => {
       format: result.format
     };
   } catch (error) {
-    // Delete local file even if upload fails
+    
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
     }
@@ -45,12 +45,12 @@ const uploadAudio = async (filePath, folder = 'music-app/audio') => {
   try {
     const result = await cloudinary.uploader.upload(filePath, {
       folder,
-      resource_type: 'video', // Audio must be treated as 'video' in Cloudinary
-      use_filename: true,     // Keep the original filename
-      unique_filename: false  // Optional: avoid random strings
+      resource_type: 'video', 
+      use_filename: true,     
+      unique_filename: false  
     });
 
-    // Delete local file after upload
+   
     fs.unlinkSync(filePath);
 
     return {
@@ -77,14 +77,14 @@ const uploadProfilePicture = async (filePath) => {
       folder: 'music-app/profiles',
       resource_type: 'image',
       transformation: [
-        { width: 500, height: 500, crop: 'fill', gravity: 'face' }, // Focus on face
-        { radius: 'max' }, // Make it circular
+        { width: 500, height: 500, crop: 'fill', gravity: 'face' }, 
+        { radius: 'max' }, 
         { quality: 'auto' },
         { fetch_format: 'auto' }
       ]
     });
 
-    // Delete local file after upload
+    
     fs.unlinkSync(filePath);
 
     return {
@@ -92,7 +92,7 @@ const uploadProfilePicture = async (filePath) => {
       publicId: result.public_id
     };
   } catch (error) {
-    // Delete local file even if upload fails
+    
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
     }

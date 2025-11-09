@@ -1,5 +1,3 @@
-// utils/index.js - Export all utilities
-
 const validateEnv = require('./validateEnv');
 const ApiResponse = require('./apiResponse');
 const { 

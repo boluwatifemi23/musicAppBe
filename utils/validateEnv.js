@@ -1,5 +1,3 @@
-// utils/validateEnv.js - Validate required environment variables
-
 const requiredEnvVars = [
   'MONGODB_URI',
   'JWT_SECRET',
@@ -30,7 +28,7 @@ function validateEnv() {
   const missing = [];
   const present = [];
 
-  // Check required variables
+ 
   requiredEnvVars.forEach(varName => {
     if (!process.env[varName]) {
       missing.push(varName);
@@ -39,9 +37,9 @@ function validateEnv() {
     }
   });
 
-  // Display results
+  
   if (present.length > 0) {
-    console.log('✅ Required variables present:');
+    console.log('Required variables present:');
     present.forEach(varName => {
       console.log(`   ✓ ${varName}`);
     });
@@ -49,15 +47,15 @@ function validateEnv() {
   }
 
   if (missing.length > 0) {
-    console.error('❌ Missing required environment variables:\n');
+    console.error('Missing required environment variables:\n');
     missing.forEach(varName => {
       console.error(`   ✗ ${varName}`);
     });
-    console.error('\n💡 Please create a .env file based on .env.example\n');
+    console.error('\nPlease create a .env file based on .env.example\n');
     process.exit(1);
   }
 
-  // Check optional variables and set defaults
+ 
   const defaults = {
     PORT: '5000',
     NODE_ENV: 'development',
@@ -72,11 +70,11 @@ function validateEnv() {
   optionalEnvVars.forEach(varName => {
     if (!process.env[varName] && defaults[varName]) {
       process.env[varName] = defaults[varName];
-      console.log(`⚠️  ${varName} not set, using default: ${defaults[varName]}`);
+      console.log(` ${varName} not set, using default: ${defaults[varName]}`);
     }
   });
 
-  console.log('\n✅ All required environment variables are set!\n');
+  console.log('\n All required environment variables are set!\n');
 }
 
 module.exports = validateEnv;

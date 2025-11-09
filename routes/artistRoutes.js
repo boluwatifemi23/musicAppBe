@@ -19,7 +19,7 @@ router.get('/:id/albums', idValidation, paginationValidation, artistController.g
 router.post(
     '/',
     protect,
-    uploadSingleImage, // <-- This parses form-data (so req.body is filled)
+    uploadSingleImage, 
     artistController.createArtist
 );
 router.put('/:id', protect, isArtist, idValidation, artistController.updateArtist);
